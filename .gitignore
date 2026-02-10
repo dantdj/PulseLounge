@@ -30,3 +30,9 @@ go.work.sum
 # Editor/IDE
 # .idea/
 # .vscode/
+
+# Local build caches/artifacts
+.gocache/
+frontend/node_modules/
+/server
+/pulselounge
