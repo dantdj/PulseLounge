@@ -1,0 +1,17 @@
+root = "."
+tmp_dir = ".air-tmp"
+
+[build]
+cmd = "go build -o .air-tmp/pulselounge ./cmd/server"
+bin = ".air-tmp/pulselounge"
+full_bin = ".air-tmp/pulselounge"
+delay = 200
+include_ext = ["go"]
+exclude_dir = ["frontend", "node_modules", ".git", ".air-tmp"]
+exclude_regex = ["_test\\.go"]
+
+[log]
+time = true
+
+[misc]
+clean_on_exit = true
