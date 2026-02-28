@@ -4,6 +4,20 @@
 
 Configuration lives in `.env` (create from `.env.example`).
 
+## VSCode Workspace (Open Repo Root)
+
+If you open the full repo in VSCode, the React TypeScript project still resolves from `frontend/`.
+
+One-time setup:
+```bash
+cd frontend
+npm ci
+```
+
+Notes:
+- `.vscode/settings.json` points VSCode TypeScript to `frontend/node_modules/typescript/lib`.
+- If you see errors in the TS in VSCode, `frontend/node_modules` is likely incomplete. Re-run `npm ci` in `frontend/`.
+
 ## Docker Hot Reload (Go + JS)
 
 Use the dev compose file to get:
