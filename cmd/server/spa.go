@@ -3,6 +3,8 @@ package main
 import (
 	"io/fs"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"path"
 	"strings"
 )
@@ -37,4 +39,23 @@ func spaHandler(uiFS fs.FS) http.HandlerFunc {
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		_, _ = w.Write(indexHTML)
 	}
+}
+
+// spaProxyHandler returns an http.HandlerFunc that proxies requests to the specified target URL.
+// It is used to forward requests to a development server when the UI_DEV_SERVER environment variable is set.
+func spaProxyHandler(target string) (http.HandlerFunc, error) {
+	u, err := url.Parse(target)
+	if err != nil {
+		return nil, err
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(u)
+
+	return func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/api/") {
+			http.NotFound(w, r)
+			return
+		}
+		proxy.ServeHTTP(w, r)
+	}, nil
 }

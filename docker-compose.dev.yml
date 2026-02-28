@@ -1,0 +1,60 @@
+services:
+  api:
+    image: cosmtrek/air:v1.52.3
+    working_dir: /app
+    command: ["air", "-c", ".air.toml"]
+    environment:
+      PORT: "8080"
+      UI_DEV_SERVER: "http://ui:5173"
+      POSTGRES_HOST: "postgres"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "${POSTGRES_DB:-pulselounge}"
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_SSLMODE: "${POSTGRES_SSLMODE:-disable}"
+    ports:
+      - "${APP_PORT:-8080}:8080"
+    volumes:
+      - .:/app
+      - pulselounge_gomodcache:/go/pkg/mod
+      - pulselounge_gocache:/root/.cache/go-build
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ui:
+    image: node:20-alpine
+    working_dir: /app/frontend
+    command: ["sh", "-c", "npm install && npm run dev -- --host 0.0.0.0 --port 5173"]
+    environment:
+      CHOKIDAR_USEPOLLING: "true"
+      VITE_API_PROXY_TARGET: "http://api:8080"
+    ports:
+      - "5173:5173"
+    volumes:
+      - .:/app
+      - pulselounge_node_modules:/app/frontend/node_modules
+    depends_on:
+      - api
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: "${POSTGRES_USER:-postgres}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
+      POSTGRES_DB: "${POSTGRES_DB:-pulselounge}"
+    ports:
+      - "${POSTGRES_HOST_PORT:-5433}:5432"
+    volumes:
+      - pulselounge_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  pulselounge_pgdata:
+  pulselounge_node_modules:
+  pulselounge_gomodcache:
+  pulselounge_gocache:

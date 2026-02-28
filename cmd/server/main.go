@@ -27,13 +27,24 @@ func main() {
 	}
 	defer db.Close()
 
-	uiFS, err := fs.Sub(embeddedUI, "web/dist")
-	if err != nil {
-		log.Fatalf("failed to load embedded UI: %v", err)
+	var uiHandler http.Handler
+	uiDevServer := os.Getenv("UI_DEV_SERVER")
+	if uiDevServer != "" {
+		uiHandler, err = spaProxyHandler(uiDevServer)
+		if err != nil {
+			log.Fatalf("failed to configure UI dev proxy: %v", err)
+		}
+		log.Printf("proxying UI requests to %s", uiDevServer)
+	} else {
+		uiFS, fsErr := fs.Sub(embeddedUI, "web/dist")
+		if fsErr != nil {
+			log.Fatalf("failed to load embedded UI: %v", fsErr)
+		}
+		uiHandler = spaHandler(uiFS)
 	}
 
 	application := app{db: db}
-	mux := application.routes(uiFS)
+	mux := application.routes(uiHandler)
 
 	addr := ":" + port
 	log.Printf("server listening on %s", addr)
