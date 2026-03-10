@@ -9,6 +9,7 @@ Basic scaffold with:
 ## API
 - `GET /api/health`
 - `GET /api/messages`
+- `POST /api/messages`
 
 ## Development
 

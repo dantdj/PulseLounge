@@ -9,6 +9,7 @@ FROM golang:1.22-alpine AS go-build
 WORKDIR /app
 COPY go.mod go.sum ./
 COPY cmd ./cmd
+COPY internal ./internal
 COPY --from=ui-build /app/cmd/server/web ./cmd/server/web
 RUN go mod download
 RUN go build -mod=readonly -o pulselounge ./cmd/server
