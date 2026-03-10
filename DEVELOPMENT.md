@@ -49,4 +49,20 @@ Notes:
 make help
 make dev-up
 make dev-down
+make seed-dev
+make seed-reset-dev
+```
+
+## Dev Seed Data
+
+Run after `make dev-up`:
+
+```bash
+make seed-dev
+```
+
+To wipe and reseed:
+
+```bash
+make seed-reset-dev
 ```

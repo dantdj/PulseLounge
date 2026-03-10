@@ -1,0 +1,45 @@
+package messages
+
+import (
+	"context"
+	"database/sql"
+)
+
+type PostgresRepository struct {
+	db *sql.DB
+}
+
+func NewPostgresRepository(db *sql.DB) PostgresRepository {
+	return PostgresRepository{db: db}
+}
+
+func (r PostgresRepository) List(ctx context.Context) ([]Message, error) {
+	rows, err := r.db.QueryContext(ctx, "SELECT id, body, created_at FROM messages ORDER BY id")
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	messages := make([]Message, 0)
+	for rows.Next() {
+		var m Message
+		if err := rows.Scan(&m.ID, &m.Body, &m.CreatedAt); err != nil {
+			return nil, err
+		}
+		messages = append(messages, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return messages, nil
+}
+
+func (r PostgresRepository) Create(ctx context.Context, body string) (Message, error) {
+	var m Message
+	err := r.db.QueryRowContext(ctx, "INSERT INTO messages (body) VALUES ($1) RETURNING id, body, created_at", body).Scan(&m.ID, &m.Body, &m.CreatedAt)
+	if err != nil {
+		return Message{}, err
+	}
+	return m, nil
+}

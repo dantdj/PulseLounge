@@ -6,6 +6,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	httpapi "pulselounge/internal/http"
+	"pulselounge/internal/messages"
 )
 
 //go:embed web/dist/*
@@ -43,8 +46,9 @@ func main() {
 		uiHandler = spaHandler(uiFS)
 	}
 
-	application := app{db: db}
-	mux := application.routes(uiHandler)
+	messageRepo := messages.NewPostgresRepository(db)
+	messageService := messages.NewService(messageRepo)
+	mux := httpapi.NewRouter(uiHandler, messageService)
 
 	addr := ":" + port
 	log.Printf("server listening on %s", addr)
