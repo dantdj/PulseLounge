@@ -3,7 +3,7 @@ APP_NAME := pulselounge
 POSTGRES_USER ?= postgres
 POSTGRES_DB ?= pulselounge
 
-.PHONY: help dev-up dev-down seed-dev seed-reset-dev ui-install ui-build api-build clean
+.PHONY: help dev-up dev-down seed-dev seed-reset-dev ui-install ui-build api-build lint-go lint-frontend clean
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -30,6 +30,12 @@ ui-build: ## Build frontend bundle embedded by Go
 
 api-build: ## Build Go server binary
 	go build -o $(APP_NAME) ./cmd/server
+
+lint-go: ## Run Go linters
+	golangci-lint run
+
+lint-frontend: ## Run frontend linters
+	cd frontend && npm run lint
 
 clean: ## Remove local build artifacts
 	rm -f ./$(APP_NAME) ./server

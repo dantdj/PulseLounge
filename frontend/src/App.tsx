@@ -37,8 +37,12 @@ export function App() {
           isSubmitting={isSubmitting}
           submitError={submitError}
           onChange={setNewMessageBody}
-          onRefresh={loadMessages}
-          onSubmit={handleSubmit}
+          onRefresh={() => {
+            void loadMessages();
+          }}
+          onSubmit={(event) => {
+            void handleSubmit(event);
+          }}
         />
       </section>
     </main>

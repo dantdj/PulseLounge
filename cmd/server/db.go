@@ -19,12 +19,16 @@ func initDB(databaseURL string) (*sql.DB, error) {
 	}
 
 	if err := waitForDB(db, 10, 2*time.Second); err != nil {
-		db.Close()
+		if closeErr := db.Close(); closeErr != nil {
+			return nil, fmt.Errorf("wait for database: %w; close database: %v", err, closeErr)
+		}
 		return nil, fmt.Errorf("wait for database: %w", err)
 	}
 
 	if err := ensureSchema(db); err != nil {
-		db.Close()
+		if closeErr := db.Close(); closeErr != nil {
+			return nil, fmt.Errorf("ensure schema: %w; close database: %v", err, closeErr)
+		}
 		return nil, fmt.Errorf("ensure schema: %w", err)
 	}
 
