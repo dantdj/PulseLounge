@@ -28,7 +28,11 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to initialize database: %v", err)
 	}
-	defer db.Close()
+	defer func() {
+		if closeErr := db.Close(); closeErr != nil {
+			log.Printf("failed to close database: %v", closeErr)
+		}
+	}()
 
 	var uiHandler http.Handler
 	uiDevServer := os.Getenv("UI_DEV_SERVER")

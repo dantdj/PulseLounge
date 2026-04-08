@@ -51,6 +51,8 @@ make dev-up
 make dev-down
 make seed-dev
 make seed-reset-dev
+make lint-go
+make lint-frontend
 ```
 
 ## Dev Seed Data

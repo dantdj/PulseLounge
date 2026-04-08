@@ -13,12 +13,16 @@ func NewPostgresRepository(db *sql.DB) PostgresRepository {
 	return PostgresRepository{db: db}
 }
 
-func (r PostgresRepository) List(ctx context.Context) ([]Message, error) {
+func (r PostgresRepository) List(ctx context.Context) (_ []Message, err error) {
 	rows, err := r.db.QueryContext(ctx, "SELECT id, body, created_at FROM messages ORDER BY id")
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	defer func() {
+		if closeErr := rows.Close(); closeErr != nil && err == nil {
+			err = closeErr
+		}
+	}()
 
 	messages := make([]Message, 0)
 	for rows.Next() {
