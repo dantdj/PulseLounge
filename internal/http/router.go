@@ -17,6 +17,8 @@ func NewRouter(uiHandler http.Handler, messageService messages.Service) *http.Se
 			messagesHandler.List(w, r)
 		case http.MethodPost:
 			messagesHandler.Create(w, r)
+		case http.MethodPut:
+			messagesHandler.Edit(w, r)
 		default:
 			writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
 		}

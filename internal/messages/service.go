@@ -28,3 +28,12 @@ func (s Service) Create(ctx context.Context, body string) (Message, error) {
 
 	return s.repo.Create(ctx, trimmedBody)
 }
+
+func (s Service) Edit(ctx context.Context, id int, body string) error {
+	trimmedBody := strings.TrimSpace(body)
+	if trimmedBody == "" {
+		return ErrEmptyBody
+	}
+
+	return s.repo.Edit(ctx, id, trimmedBody)
+}

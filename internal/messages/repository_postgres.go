@@ -47,3 +47,11 @@ func (r PostgresRepository) Create(ctx context.Context, body string) (Message, e
 	}
 	return m, nil
 }
+
+func (r PostgresRepository) Edit(ctx context.Context, id int, body string) error {
+	row := r.db.QueryRowContext(ctx, "UPDATE messages SET body = $1 WHERE id = $2", body, id)
+	if err := row.Err(); err != nil {
+		return err
+	}
+	return nil
+}

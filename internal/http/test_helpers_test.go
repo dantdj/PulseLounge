@@ -33,3 +33,7 @@ func (f *fakeMessageRepo) Create(ctx context.Context, body string) (messages.Mes
 	}
 	return messages.Message{}, nil
 }
+
+func (f *fakeMessageRepo) Edit(ctx context.Context, id int, body string) error {
+	return nil
+}
