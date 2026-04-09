@@ -75,11 +75,14 @@ func (h MessagesHandler) Edit(w http.ResponseWriter, r *http.Request) {
 
 	err := h.service.Edit(r.Context(), req.ID, req.NewBody)
 	if err != nil {
-		if errors.Is(err, messages.ErrEmptyBody) {
+		switch {
+		case errors.Is(err, messages.ErrEmptyBody):
 			writeJSONError(w, http.StatusBadRequest, err.Error())
-			return
+		case errors.Is(err, messages.ErrMessageNotFound):
+			writeJSONError(w, http.StatusNotFound, err.Error())
+		default:
+			writeJSONError(w, http.StatusInternalServerError, "failed to edit message")
 		}
-		writeJSONError(w, http.StatusInternalServerError, "failed to edit message")
 		return
 	}
 

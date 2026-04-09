@@ -51,3 +51,31 @@ func TestRouterWiresCreateMessagesEndpoint(t *testing.T) {
 		t.Fatalf("expected create to be called once, got %d", repo.createCall)
 	}
 }
+
+func TestRouterWiresEditMessagesEndpoint(t *testing.T) {
+	repo := &fakeMessageRepo{}
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo))
+
+	req := httptest.NewRequest(http.MethodPut, "/api/messages", strings.NewReader(`{"id":1,"newBody":"updated from router"}`))
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d", http.StatusNoContent, rr.Code)
+	}
+	if repo.editCalls != 1 {
+		t.Fatalf("expected edit to be called once, got %d", repo.editCalls)
+	}
+}
+
+func TestRouterReturnsNotFoundForUnknownEndpoint(t *testing.T) {
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(&fakeMessageRepo{}))
+
+	req := httptest.NewRequest(http.MethodGet, "/api/unknown", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNotFound {
+		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rr.Code)
+	}
+}

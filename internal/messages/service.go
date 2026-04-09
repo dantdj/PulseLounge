@@ -7,6 +7,7 @@ import (
 )
 
 var ErrEmptyBody = errors.New("message body cannot be empty")
+var ErrMessageNotFound = errors.New("message not found")
 
 type Service struct {
 	repo Repository

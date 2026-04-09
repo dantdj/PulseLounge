@@ -90,6 +90,8 @@ func TestServiceEditTrimsBodyBeforePersisting(t *testing.T) {
 
 	repo := &fakeRepository{
 		editFn: func(_ context.Context, id int, body string) error {
+			capturedID = id
+			capturedBody = body
 			return nil
 		},
 	}
