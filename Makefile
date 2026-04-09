@@ -2,6 +2,8 @@ COMPOSE := docker compose
 APP_NAME := pulselounge
 POSTGRES_USER ?= postgres
 POSTGRES_DB ?= pulselounge
+UI_DIST_DIR := frontend/dist
+UI_EMBED_DIR := frontend/embed/generated
 
 .PHONY: help dev-up dev-down seed-dev seed-reset-dev ui-install ui-build api-build lint-go lint-frontend clean
 
@@ -23,12 +25,15 @@ seed-reset-dev: ## Reset + reseed local dev Postgres data
 		psql -U "$(POSTGRES_USER)" -d "$(POSTGRES_DB)" < db/seed/reset.sql
 
 ui-install: ## Install frontend dependencies
-	cd frontend && npm install
+	cd frontend && npm ci
 
-ui-build: ## Build frontend bundle embedded by Go
+ui-build: ## Build frontend bundle and stage it for Go embed
 	cd frontend && npm run build
+	rm -rf $(UI_EMBED_DIR)
+	mkdir -p $(UI_EMBED_DIR)
+	cp -R $(UI_DIST_DIR)/. $(UI_EMBED_DIR)/
 
-api-build: ## Build Go server binary
+api-build: ui-build ## Build Go server binary with staged UI assets
 	go build -o $(APP_NAME) ./cmd/server
 
 lint-go: ## Run Go linters
@@ -38,4 +43,6 @@ lint-frontend: ## Run frontend linters
 	cd frontend && npm run lint
 
 clean: ## Remove local build artifacts
+	rm -rf $(UI_DIST_DIR) $(UI_EMBED_DIR)
+	rm -rf ./cmd/server/web
 	rm -f ./$(APP_NAME) ./server
