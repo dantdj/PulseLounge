@@ -1,12 +1,14 @@
+import { EditableMessageItem } from "./EditableMessageItem";
 import type { Message } from "../types";
 
 type MessageListProps = {
   messages: Message[];
   loading: boolean;
   error: string | null;
+  onEditMessage: (id: number, body: string) => Promise<string | null>;
 };
 
-export function MessageList({ messages, loading, error }: MessageListProps) {
+export function MessageList({ messages, loading, error, onEditMessage }: MessageListProps) {
   return (
     <div className="messages-scroll">
       {loading && <p>Loading messages...</p>}
@@ -19,12 +21,11 @@ export function MessageList({ messages, loading, error }: MessageListProps) {
           ) : (
             <ul className="message-list">
               {messages.map((message) => (
-                <li key={message.id} className="message-item">
-                  <p className="message-body">{message.body}</p>
-                  <p className="message-meta">
-                    #{message.id} · {new Date(message.created_at).toLocaleString()}
-                  </p>
-                </li>
+                <EditableMessageItem
+                  key={message.id}
+                  message={message}
+                  onEditMessage={onEditMessage}
+                />
               ))}
             </ul>
           )}

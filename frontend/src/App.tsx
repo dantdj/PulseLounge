@@ -13,6 +13,7 @@ export function App() {
     isSubmitting,
     loadMessages,
     submitMessage,
+    saveEditedMessage,
   } = useMessages();
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -30,7 +31,12 @@ export function App() {
       <section className="card">
         <h2>Messages</h2>
 
-        <MessageList messages={messages} loading={loading} error={error} />
+        <MessageList
+          messages={messages}
+          loading={loading}
+          error={error}
+          onEditMessage={saveEditedMessage}
+        />
 
         <MessageComposer
           value={newMessageBody}

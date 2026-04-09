@@ -101,4 +101,70 @@ describe("App", () => {
       await screen.findByText("Failed to load messages: database offline"),
     ).toBeInTheDocument();
   });
+
+  it("edits a message inline", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce(
+      createResponse([
+        {
+          id: 1,
+          body: "First message",
+          created_at: "2026-03-17T18:00:00Z",
+        },
+      ]),
+    );
+    fetchMock.mockResolvedValueOnce(createResponse({}, 204));
+
+    render(<App />);
+
+    expect(await screen.findByText("First message")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit message #1" }));
+
+    const input = screen.getByLabelText("Edit message #1");
+    await user.clear(input);
+    await user.type(input, "Updated message");
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(await screen.findByText("Updated message")).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+    });
+
+    expect(fetchMock.mock.calls[1]?.[0]).toBe("/api/messages");
+    expect(fetchMock.mock.calls[1]?.[1]).toMatchObject({
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ id: 1, newBody: "Updated message" }),
+    });
+  });
+
+  it("shows validation errors when saving an empty edit", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce(
+      createResponse([
+        {
+          id: 1,
+          body: "First message",
+          created_at: "2026-03-17T18:00:00Z",
+        },
+      ]),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByText("First message")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Edit message #1" }));
+
+    const input = screen.getByLabelText("Edit message #1");
+    await user.clear(input);
+    await user.click(screen.getByRole("button", { name: "Save" }));
+
+    expect(screen.getByText("Failed to save edit: Message cannot be empty.")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });

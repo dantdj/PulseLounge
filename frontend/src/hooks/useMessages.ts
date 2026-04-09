@@ -1,5 +1,5 @@
 import React from "react";
-import { createMessage, listMessages } from "../api/messages";
+import { createMessage, editMessage, listMessages } from "../api/messages";
 import type { Message } from "../types";
 
 type UseMessagesResult = {
@@ -10,6 +10,7 @@ type UseMessagesResult = {
   isSubmitting: boolean;
   loadMessages: () => Promise<void>;
   submitMessage: (body: string) => Promise<boolean>;
+  saveEditedMessage: (id: number, body: string) => Promise<string | null>;
 };
 
 function toErrorMessage(error: unknown): string {
@@ -63,6 +64,25 @@ export function useMessages(): UseMessagesResult {
     }
   }, []);
 
+  const saveEditedMessage = React.useCallback(async (id: number, body: string) => {
+    const trimmedBody = body.trim();
+    if (!trimmedBody) {
+      return "Message cannot be empty.";
+    }
+
+    try {
+      await editMessage(id, trimmedBody);
+      setMessages((currentMessages) =>
+        currentMessages.map((message) =>
+          message.id === id ? { ...message, body: trimmedBody } : message,
+        ),
+      );
+      return null;
+    } catch (saveEditedMessageError: unknown) {
+      return toErrorMessage(saveEditedMessageError);
+    }
+  }, []);
+
   return {
     messages,
     loading,
@@ -71,5 +91,6 @@ export function useMessages(): UseMessagesResult {
     isSubmitting,
     loadMessages,
     submitMessage,
+    saveEditedMessage,
   };
 }

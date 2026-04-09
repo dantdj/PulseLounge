@@ -12,6 +12,8 @@ type fakeRepository struct {
 	listErr     error
 	createFn    func(context.Context, string) (Message, error)
 	createCalls int
+	editFn      (func(ctx context.Context, id int, body string) error)
+	editCalls   int
 }
 
 func (f *fakeRepository) List(context.Context) ([]Message, error) {
@@ -27,6 +29,14 @@ func (f *fakeRepository) Create(ctx context.Context, body string) (Message, erro
 		return f.createFn(ctx, body)
 	}
 	return Message{}, nil
+}
+
+func (f *fakeRepository) Edit(ctx context.Context, id int, body string) error {
+	f.editCalls++
+	if f.editFn != nil {
+		return f.editFn(ctx, id, body)
+	}
+	return nil
 }
 
 func TestServiceCreateRejectsEmptyBody(t *testing.T) {
@@ -60,5 +70,42 @@ func TestServiceCreateTrimsBodyBeforePersisting(t *testing.T) {
 	}
 	if repo.createCalls != 1 {
 		t.Fatalf("expected repository create to be called once, got %d", repo.createCalls)
+	}
+}
+
+func TestServiceEditRejectsEmptyBody(t *testing.T) {
+	repo := &fakeRepository{}
+	service := NewService(repo)
+
+	// Provide whitespace-only body to Edit, which should be rejected with ErrEmptyBody
+	err := service.Edit(context.Background(), 1, "   \n\t ")
+	if !errors.Is(err, ErrEmptyBody) {
+		t.Fatalf("expected ErrEmptyBody, got %v", err)
+	}
+}
+
+func TestServiceEditTrimsBodyBeforePersisting(t *testing.T) {
+	var capturedID int
+	var capturedBody string
+
+	repo := &fakeRepository{
+		editFn: func(_ context.Context, id int, body string) error {
+			capturedID = id
+			capturedBody = body
+			return nil
+		},
+	}
+
+	service := NewService(repo)
+
+	err := service.Edit(context.Background(), 42, "  updated message  ")
+	if err != nil {
+		t.Fatalf("Edit returned error: %v", err)
+	}
+	if capturedID != 42 {
+		t.Fatalf("expected ID 42, got %d", capturedID)
+	}
+	if capturedBody != "updated message" {
+		t.Fatalf("expected trimmed body 'updated message', got %q", capturedBody)
 	}
 }

@@ -36,3 +36,16 @@ export async function createMessage(body: string): Promise<Message> {
 
   return (await response.json()) as Message;
 }
+
+export async function editMessage(id: number, newBody: string): Promise<void> {
+  const response = await fetch("/api/messages", {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ id, newBody }),
+  });
+  if (!response.ok) {
+    throw new Error(await getErrorMessage(response));
+  }
+}
