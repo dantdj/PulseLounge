@@ -1,18 +1,14 @@
 package main
 
 import (
-	"embed"
-	"io/fs"
 	"log"
 	"net/http"
 	"os"
 
+	uiassets "pulselounge"
 	httpapi "pulselounge/internal/http"
 	"pulselounge/internal/messages"
 )
-
-//go:embed web/dist/*
-var embeddedUI embed.FS
 
 func main() {
 	port := os.Getenv("PORT")
@@ -43,7 +39,7 @@ func main() {
 		}
 		log.Printf("proxying UI requests to %s", uiDevServer)
 	} else {
-		uiFS, fsErr := fs.Sub(embeddedUI, "web/dist")
+		uiFS, fsErr := uiassets.FS()
 		if fsErr != nil {
 			log.Fatalf("failed to load embedded UI: %v", fsErr)
 		}

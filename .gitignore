@@ -37,6 +37,7 @@ go.work.sum
 .air-tmp/
 frontend/node_modules/
 frontend/*.tsbuildinfo
-/cmd/server/web/dist/
+frontend/dist/
+frontend/embed/generated/
 /server
 /pulselounge

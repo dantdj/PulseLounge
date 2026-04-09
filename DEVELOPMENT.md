@@ -49,11 +49,14 @@ Notes:
 make help
 make dev-up
 make dev-down
+make ui-build
 make seed-dev
 make seed-reset-dev
 make lint-go
 make lint-frontend
 ```
+
+`make ui-build` builds the frontend into `frontend/dist` and stages the assets into `frontend/embed/generated` for `go build`.
 
 ## Dev Seed Data
 
