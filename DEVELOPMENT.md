@@ -51,6 +51,7 @@ Notes:
 make help
 make dev-up
 make dev-down
+make db-reset-dev
 make migrate-up
 make migrate-status
 make ui-build
@@ -63,6 +64,7 @@ make lint-frontend
 `make ui-build` builds the frontend into `frontend/dist` and stages the assets into `frontend/embed/generated` for `go build`.
 `make migrate-up` applies the SQL files in `db/migrations` using `goose`, which records migration history in its `goose_db_version` table.
 `make dev-up` already runs `make migrate-up`, so `migrate-up` is mainly for manual retries or inspecting schema setup separately.
+`make db-reset-dev` removes the dev Postgres volume and restarts Postgres with a fresh empty database.
 
 ## Dev Seed Data
 
@@ -76,4 +78,12 @@ To wipe and reseed:
 
 ```bash
 make seed-reset-dev
+```
+
+If you need a completely fresh database before rerunning migrations:
+
+```bash
+make db-reset-dev
+make dev-up
+make seed-dev
 ```
