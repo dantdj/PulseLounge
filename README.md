@@ -16,3 +16,5 @@ Frontend release assets build into `frontend/dist` and are staged into `frontend
 ## Development
 
 Development setup, local run, Docker workflows, and hot reload instructions are in [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+Database schema changes live in `db/migrations` and are applied with `goose` via `make migrate-up`.

@@ -35,6 +35,8 @@ Open:
 - API (Go, auto-reload): [http://localhost:8080/api/health](http://localhost:8080/api/health)
 
 Notes:
+- `make dev-up` starts Postgres, runs pending migrations, then attaches to the API and UI dev services.
+- The wait-for-database step happens inside `make migrate-up`; it retries the Postgres connection before running `goose`.
 - `http://localhost:8080` proxies frontend routes to Vite in dev mode.
 - Frontend requests to `/api/*` are proxied by Vite to the Go container.
 - This dev setup mounts your source tree into containers, so file edits reload automatically.
@@ -49,6 +51,8 @@ Notes:
 make help
 make dev-up
 make dev-down
+make migrate-up
+make migrate-status
 make ui-build
 make seed-dev
 make seed-reset-dev
@@ -57,6 +61,8 @@ make lint-frontend
 ```
 
 `make ui-build` builds the frontend into `frontend/dist` and stages the assets into `frontend/embed/generated` for `go build`.
+`make migrate-up` applies the SQL files in `db/migrations` using `goose`, which records migration history in its `goose_db_version` table.
+`make dev-up` already runs `make migrate-up`, so `migrate-up` is mainly for manual retries or inspecting schema setup separately.
 
 ## Dev Seed Data
 
