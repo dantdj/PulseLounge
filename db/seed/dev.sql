@@ -1,12 +1,6 @@
 -- Dev-only seed data for local Postgres
 -- Safe to run multiple times.
 
-CREATE TABLE IF NOT EXISTS messages (
-    id BIGSERIAL PRIMARY KEY,
-    body TEXT NOT NULL DEFAULT '',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
 INSERT INTO messages (id, body, created_at)
 VALUES
     (1, 'Welcome to PulseLounge', NOW() - INTERVAL '3 hours'),

@@ -1,3 +1,8 @@
+ifneq (,$(wildcard ./.env))
+include .env
+export
+endif
+
 COMPOSE := docker compose
 APP_NAME := pulselounge
 POSTGRES_USER ?= postgres
@@ -5,22 +10,31 @@ POSTGRES_DB ?= pulselounge
 UI_DIST_DIR := frontend/dist
 UI_EMBED_DIR := frontend/embed/generated
 
-.PHONY: help dev-up dev-down seed-dev seed-reset-dev ui-install ui-build api-build lint-go lint-frontend clean
+.PHONY: help dev-up dev-down migrate-up migrate-status seed-dev seed-reset-dev ui-install ui-build api-build lint-go lint-frontend clean
 
 help: ## Show available targets
 	@awk 'BEGIN {FS = ":.*##"} /^[a-zA-Z0-9_-]+:.*##/ {printf "%-14s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 dev-up: ## Start hot-reload dev stack (Go + Vite + Postgres)
-	$(COMPOSE) -f docker-compose.dev.yml up
+	$(COMPOSE) -f docker-compose.dev.yml up -d postgres
+	# migrate-up waits for Postgres to accept connections before running goose.
+	$(MAKE) migrate-up
+	$(COMPOSE) -f docker-compose.dev.yml up api ui
 
 dev-down: ## Stop hot-reload dev stack
 	$(COMPOSE) -f docker-compose.dev.yml down
 
-seed-dev: ## Seed local dev Postgres data (non-destructive)
+migrate-up: ## Apply pending database migrations
+	go run ./cmd/migrate up
+
+migrate-status: ## Show migration status
+	go run ./cmd/migrate status
+
+seed-dev: migrate-up ## Seed local dev Postgres data (non-destructive)
 	$(COMPOSE) -f docker-compose.dev.yml exec -T postgres \
 		psql -U "$(POSTGRES_USER)" -d "$(POSTGRES_DB)" < db/seed/dev.sql
 
-seed-reset-dev: ## Reset + reseed local dev Postgres data
+seed-reset-dev: migrate-up ## Reset + reseed local dev Postgres data
 	$(COMPOSE) -f docker-compose.dev.yml exec -T postgres \
 		psql -U "$(POSTGRES_USER)" -d "$(POSTGRES_DB)" < db/seed/reset.sql
 
