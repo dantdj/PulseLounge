@@ -13,8 +13,8 @@ async function getErrorMessage(response: Response): Promise<string> {
   return `request failed with status ${response.status}`;
 }
 
-export async function listMessages(): Promise<Message[]> {
-  const response = await fetch("/api/messages");
+export async function listMessages(channelId: number): Promise<Message[]> {
+  const response = await fetch(`/api/channels/${channelId}/messages`);
   if (!response.ok) {
     throw new Error(await getErrorMessage(response));
   }
@@ -22,8 +22,8 @@ export async function listMessages(): Promise<Message[]> {
   return (await response.json()) as Message[];
 }
 
-export async function createMessage(body: string): Promise<Message> {
-  const response = await fetch("/api/messages", {
+export async function createMessage(channelId: number, body: string): Promise<Message> {
+  const response = await fetch(`/api/channels/${channelId}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -38,12 +38,12 @@ export async function createMessage(body: string): Promise<Message> {
 }
 
 export async function editMessage(id: number, newBody: string): Promise<void> {
-  const response = await fetch("/api/messages", {
+  const response = await fetch(`/api/messages/${id}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ id, newBody }),
+    body: JSON.stringify({ newBody }),
   });
   if (!response.ok) {
     throw new Error(await getErrorMessage(response));

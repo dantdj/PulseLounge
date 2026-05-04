@@ -8,14 +8,15 @@ import (
 	"testing"
 	"time"
 
+	"pulselounge/internal/channels"
 	"pulselounge/internal/messages"
 )
 
-func TestRouterWiresListMessagesEndpoint(t *testing.T) {
+func TestRouterWiresListChannelMessagesEndpoint(t *testing.T) {
 	repo := &fakeMessageRepo{listResult: []messages.Message{}}
-	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo))
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService())
 
-	req := httptest.NewRequest(http.MethodGet, "/api/messages", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
@@ -25,22 +26,27 @@ func TestRouterWiresListMessagesEndpoint(t *testing.T) {
 	if repo.listCalls != 1 {
 		t.Fatalf("expected list to be called once, got %d", repo.listCalls)
 	}
+	if repo.listChannelID != 7 {
+		t.Fatalf("expected channel id 7, got %d", repo.listChannelID)
+	}
 }
 
-func TestRouterWiresCreateMessagesEndpoint(t *testing.T) {
+func TestRouterWiresCreateChannelMessagesEndpoint(t *testing.T) {
 	createdAt := time.Date(2026, time.January, 4, 12, 0, 0, 0, time.UTC)
 	repo := &fakeMessageRepo{
-		createFn: func(_ context.Context, body string) (messages.Message, error) {
+		createFn: func(_ context.Context, channelID int64, authorID int64, body string) (messages.Message, error) {
 			return messages.Message{
 				ID:        10,
+				AuthorID:  authorID,
+				ChannelID: channelID,
 				Body:      body,
 				CreatedAt: createdAt,
 			}, nil
 		},
 	}
-	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo))
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService())
 
-	req := httptest.NewRequest(http.MethodPost, "/api/messages", strings.NewReader(`{"body":"from router"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader(`{"body":"from router"}`))
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
@@ -50,13 +56,16 @@ func TestRouterWiresCreateMessagesEndpoint(t *testing.T) {
 	if repo.createCall != 1 {
 		t.Fatalf("expected create to be called once, got %d", repo.createCall)
 	}
+	if repo.createChannelID != 7 {
+		t.Fatalf("expected channel id 7, got %d", repo.createChannelID)
+	}
 }
 
 func TestRouterWiresEditMessagesEndpoint(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo))
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService())
 
-	req := httptest.NewRequest(http.MethodPut, "/api/messages", strings.NewReader(`{"id":1,"newBody":"updated from router"}`))
+	req := httptest.NewRequest(http.MethodPut, "/api/messages/1", strings.NewReader(`{"newBody":"updated from router"}`))
 	rr := httptest.NewRecorder()
 	mux.ServeHTTP(rr, req)
 
@@ -68,8 +77,31 @@ func TestRouterWiresEditMessagesEndpoint(t *testing.T) {
 	}
 }
 
+func TestRouterWiresDeleteChannelsEndpoint(t *testing.T) {
+	channelRepo := &fakeChannelRepo{}
+	mux := NewRouter(
+		http.NotFoundHandler(),
+		messages.NewService(&fakeMessageRepo{}),
+		channels.NewService(channelRepo),
+	)
+
+	req := httptest.NewRequest(http.MethodDelete, "/api/channels/7", nil)
+	rr := httptest.NewRecorder()
+	mux.ServeHTTP(rr, req)
+
+	if rr.Code != http.StatusNoContent {
+		t.Fatalf("expected status %d, got %d", http.StatusNoContent, rr.Code)
+	}
+	if channelRepo.deleteCall != 1 {
+		t.Fatalf("expected delete to be called once, got %d", channelRepo.deleteCall)
+	}
+	if channelRepo.deleteID != 7 {
+		t.Fatalf("expected channel id 7, got %d", channelRepo.deleteID)
+	}
+}
+
 func TestRouterReturnsNotFoundForUnknownEndpoint(t *testing.T) {
-	mux := NewRouter(http.NotFoundHandler(), messages.NewService(&fakeMessageRepo{}))
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(&fakeMessageRepo{}), testChannelService())
 
 	req := httptest.NewRequest(http.MethodGet, "/api/unknown", nil)
 	rr := httptest.NewRecorder()

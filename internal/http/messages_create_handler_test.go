@@ -16,9 +16,11 @@ import (
 func TestMessagesHandlerCreateSuccess(t *testing.T) {
 	createdAt := time.Date(2026, time.January, 3, 12, 0, 0, 0, time.UTC)
 	repo := &fakeMessageRepo{
-		createFn: func(_ context.Context, body string) (messages.Message, error) {
+		createFn: func(_ context.Context, channelID int64, authorID int64, body string) (messages.Message, error) {
 			return messages.Message{
 				ID:        9,
+				AuthorID:  authorID,
+				ChannelID: channelID,
 				Body:      body,
 				CreatedAt: createdAt,
 			}, nil
@@ -26,9 +28,9 @@ func TestMessagesHandlerCreateSuccess(t *testing.T) {
 	}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/messages", strings.NewReader(`{"body":"new msg"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader(`{"body":"new msg"}`))
 	rr := httptest.NewRecorder()
-	handler.Create(rr, req)
+	handler.Create(rr, req, 7)
 
 	if rr.Code != http.StatusCreated {
 		t.Fatalf("expected status %d, got %d", http.StatusCreated, rr.Code)
@@ -36,15 +38,21 @@ func TestMessagesHandlerCreateSuccess(t *testing.T) {
 	if contentType := rr.Header().Get("Content-Type"); contentType != "application/json" {
 		t.Fatalf("expected content type application/json, got %q", contentType)
 	}
+	if repo.createChannelID != 7 {
+		t.Fatalf("expected channel id 7, got %d", repo.createChannelID)
+	}
+	if repo.createAuthorID != devAuthorID {
+		t.Fatalf("expected author id %d, got %d", devAuthorID, repo.createAuthorID)
+	}
 }
 
 func TestMessagesHandlerCreateMethodNotAllowed(t *testing.T) {
 	repo := &fakeMessageRepo{}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/messages", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
-	handler.Create(rr, req)
+	handler.Create(rr, req, 7)
 
 	if rr.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, rr.Code)
@@ -56,9 +64,9 @@ func TestMessagesHandlerCreateInvalidBody(t *testing.T) {
 	repo := &fakeMessageRepo{}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/messages", strings.NewReader("{"))
+	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader("{"))
 	rr := httptest.NewRecorder()
-	handler.Create(rr, req)
+	handler.Create(rr, req, 7)
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
@@ -73,9 +81,9 @@ func TestMessagesHandlerCreateRejectsBlankBody(t *testing.T) {
 	repo := &fakeMessageRepo{}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/messages", strings.NewReader(`{"body":"   "}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader(`{"body":"   "}`))
 	rr := httptest.NewRecorder()
-	handler.Create(rr, req)
+	handler.Create(rr, req, 7)
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
@@ -92,9 +100,9 @@ func TestMessagesHandlerCreateServiceError(t *testing.T) {
 	}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/messages", strings.NewReader(`{"body":"new msg"}`))
+	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader(`{"body":"new msg"}`))
 	rr := httptest.NewRecorder()
-	handler.Create(rr, req)
+	handler.Create(rr, req, 7)
 
 	if rr.Code != http.StatusInternalServerError {
 		t.Fatalf("expected status %d, got %d", http.StatusInternalServerError, rr.Code)

@@ -14,9 +14,9 @@ func TestMessagesHandlerEditMethodNotAllowed(t *testing.T) {
 	repo := &fakeMessageRepo{}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/messages", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/messages/1", nil)
 	rr := httptest.NewRecorder()
-	handler.Edit(rr, req)
+	handler.Edit(rr, req, 1)
 
 	if rr.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, rr.Code)
@@ -31,9 +31,9 @@ func TestMessagesHandlerEditInvalidBody(t *testing.T) {
 	repo := &fakeMessageRepo{}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPut, "/api/messages", strings.NewReader("{"))
+	req := httptest.NewRequest(http.MethodPut, "/api/messages/1", strings.NewReader("{"))
 	rr := httptest.NewRecorder()
-	handler.Edit(rr, req)
+	handler.Edit(rr, req, 1)
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
@@ -48,9 +48,9 @@ func TestMessagesHandlerEditRejectsBlankBody(t *testing.T) {
 	repo := &fakeMessageRepo{}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPut, "/api/messages", strings.NewReader(`{"id":1,"newBody":"   "}`))
+	req := httptest.NewRequest(http.MethodPut, "/api/messages/1", strings.NewReader(`{"newBody":"   "}`))
 	rr := httptest.NewRecorder()
-	handler.Edit(rr, req)
+	handler.Edit(rr, req, 1)
 
 	if rr.Code != http.StatusBadRequest {
 		t.Fatalf("expected status %d, got %d", http.StatusBadRequest, rr.Code)
@@ -63,15 +63,15 @@ func TestMessagesHandlerEditRejectsBlankBody(t *testing.T) {
 
 func TestMessagesHandlerEditMessageNotFound(t *testing.T) {
 	repo := &fakeMessageRepo{
-		editFn: func(ctx context.Context, id int, body string) error {
+		editFn: func(ctx context.Context, id int64, body string) error {
 			return messages.ErrMessageNotFound
 		},
 	}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPut, "/api/messages", strings.NewReader(`{"id":999,"newBody":"updated msg"}`))
+	req := httptest.NewRequest(http.MethodPut, "/api/messages/999", strings.NewReader(`{"newBody":"updated msg"}`))
 	rr := httptest.NewRecorder()
-	handler.Edit(rr, req)
+	handler.Edit(rr, req, 999)
 
 	if rr.Code != http.StatusNotFound {
 		t.Fatalf("expected status %d, got %d", http.StatusNotFound, rr.Code)
@@ -88,9 +88,9 @@ func TestMessagesHandlerEditServiceError(t *testing.T) {
 	}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPut, "/api/messages", strings.NewReader(`{"id":1,"newBody":"updated msg"}`))
+	req := httptest.NewRequest(http.MethodPut, "/api/messages/1", strings.NewReader(`{"newBody":"updated msg"}`))
 	rr := httptest.NewRecorder()
-	handler.Edit(rr, req)
+	handler.Edit(rr, req, 1)
 
 	if rr.Code != http.StatusInternalServerError {
 		t.Fatalf("expected status %d, got %d", http.StatusInternalServerError, rr.Code)
@@ -102,11 +102,11 @@ func TestMessagesHandlerEditServiceError(t *testing.T) {
 }
 
 func TestMessagesHandlerEditSuccess(t *testing.T) {
-	var capturedID int
+	var capturedID int64
 	var capturedBody string
 
 	repo := &fakeMessageRepo{
-		editFn: func(_ context.Context, id int, body string) error {
+		editFn: func(_ context.Context, id int64, body string) error {
 			capturedID = id
 			capturedBody = body
 			return nil
@@ -114,11 +114,11 @@ func TestMessagesHandlerEditSuccess(t *testing.T) {
 	}
 	handler := NewMessagesHandler(messages.NewService(repo))
 	newBody := "updated msg"
-	reqBody := `{"id":42,"newBody":"` + newBody + `"}`
+	reqBody := `{"newBody":"` + newBody + `"}`
 
-	req := httptest.NewRequest(http.MethodPut, "/api/messages", strings.NewReader(reqBody))
+	req := httptest.NewRequest(http.MethodPut, "/api/messages/42", strings.NewReader(reqBody))
 	rr := httptest.NewRecorder()
-	handler.Edit(rr, req)
+	handler.Edit(rr, req, 42)
 
 	if rr.Code != http.StatusNoContent {
 		t.Fatalf("expected status %d, got %d", http.StatusNoContent, rr.Code)

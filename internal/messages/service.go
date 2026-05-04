@@ -17,20 +17,20 @@ func NewService(repo Repository) Service {
 	return Service{repo: repo}
 }
 
-func (s Service) List(ctx context.Context) ([]Message, error) {
-	return s.repo.List(ctx)
+func (s Service) ListByChannel(ctx context.Context, channelID int64) ([]Message, error) {
+	return s.repo.ListByChannel(ctx, channelID)
 }
 
-func (s Service) Create(ctx context.Context, body string) (Message, error) {
+func (s Service) CreateInChannel(ctx context.Context, channelID int64, authorID int64, body string) (Message, error) {
 	trimmedBody := strings.TrimSpace(body)
 	if trimmedBody == "" {
 		return Message{}, ErrEmptyBody
 	}
 
-	return s.repo.Create(ctx, trimmedBody)
+	return s.repo.CreateInChannel(ctx, channelID, authorID, trimmedBody)
 }
 
-func (s Service) Edit(ctx context.Context, id int, body string) error {
+func (s Service) Edit(ctx context.Context, id int64, body string) error {
 	trimmedBody := strings.TrimSpace(body)
 	if trimmedBody == "" {
 		return ErrEmptyBody

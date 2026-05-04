@@ -6,6 +6,7 @@ import (
 	"os"
 
 	uiassets "pulselounge"
+	"pulselounge/internal/channels"
 	httpapi "pulselounge/internal/http"
 	"pulselounge/internal/messages"
 )
@@ -48,7 +49,9 @@ func main() {
 
 	messageRepo := messages.NewPostgresRepository(db)
 	messageService := messages.NewService(messageRepo)
-	mux := httpapi.NewRouter(uiHandler, messageService)
+	channelRepo := channels.NewPostgresRepository(db)
+	channelService := channels.NewService(channelRepo)
+	mux := httpapi.NewRouter(uiHandler, messageService, channelService)
 
 	addr := ":" + port
 	log.Printf("server listening on %s", addr)

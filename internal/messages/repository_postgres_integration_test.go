@@ -34,12 +34,38 @@ func TestPostgresRepositoryCreateAndList(t *testing.T) {
 
 	ctx := context.Background()
 	if _, err := db.ExecContext(ctx, `
+CREATE TABLE IF NOT EXISTS users (
+    id BIGSERIAL PRIMARY KEY,
+    username VARCHAR(255) NOT NULL UNIQUE,
+    display_name VARCHAR(255) NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS channels (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL UNIQUE,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE IF NOT EXISTS messages (
     id BIGSERIAL PRIMARY KEY,
+    author_id BIGINT NOT NULL REFERENCES users (id),
+    channel_id BIGINT NOT NULL REFERENCES channels (id),
     body TEXT NOT NULL DEFAULT '',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    edited_at TIMESTAMPTZ
 )`); err != nil {
 		t.Fatalf("ensure schema: %v", err)
+	}
+	if _, err := db.ExecContext(ctx, `
+INSERT INTO users (id, username, display_name)
+VALUES (1, 'integration-user', 'Integration User')
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO channels (id, name)
+VALUES (1, 'integration-channel')
+ON CONFLICT (id) DO NOTHING`); err != nil {
+		t.Fatalf("ensure seed rows: %v", err)
 	}
 
 	repo := NewPostgresRepository(db)
@@ -51,7 +77,7 @@ CREATE TABLE IF NOT EXISTS messages (
 		}
 	})
 
-	created, err := repo.Create(ctx, bodyPrefix)
+	created, err := repo.CreateInChannel(ctx, 1, 1, bodyPrefix)
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
@@ -65,7 +91,7 @@ CREATE TABLE IF NOT EXISTS messages (
 		t.Fatalf("expected created_at to be populated")
 	}
 
-	listed, err := repo.List(ctx)
+	listed, err := repo.ListByChannel(ctx, 1)
 	if err != nil {
 		t.Fatalf("List returned error: %v", err)
 	}
