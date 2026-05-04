@@ -69,6 +69,7 @@ export function ChannelPicker({
                     }}
                     aria-label={`Delete channel #${channel.name}`}
                   >
+                    {/* Trash delete icon. */}
                     <svg aria-hidden="true" focusable="false" viewBox="0 0 20 20">
                       <path d="M7 3h6l.75 1.5H17v2H3v-2h3.25L7 3Zm-2 5h10l-.7 8.05A2.2 2.2 0 0 1 12.1 18H7.9a2.2 2.2 0 0 1-2.2-1.95L5 8Zm3 1.5v6h1.5v-6H8Zm2.5 0v6H12v-6h-1.5Z" />
                     </svg>
@@ -97,6 +98,7 @@ export function ChannelPicker({
             />
             <div className="channel-create-actions">
               <button type="submit" disabled={isCreatingChannel} aria-label="Create channel">
+                {/* Plus create icon. */}
                 <svg aria-hidden="true" focusable="false" viewBox="0 0 20 20">
                   <path d="M9 4h2v5h5v2h-5v5H9v-5H4V9h5V4Z" />
                 </svg>
@@ -107,6 +109,7 @@ export function ChannelPicker({
                 onClick={onCancelCreateChannel}
                 aria-label="Cancel channel creation"
               >
+                {/* X cancel icon. */}
                 <svg aria-hidden="true" focusable="false" viewBox="0 0 20 20">
                   <path d="m5.64 4.22 4.36 4.36 4.36-4.36 1.42 1.42L11.42 10l4.36 4.36-1.42 1.42L10 11.42l-4.36 4.36-1.42-1.42L8.58 10 4.22 5.64l1.42-1.42Z" />
                 </svg>
@@ -121,6 +124,7 @@ export function ChannelPicker({
             onClick={onStartCreateChannel}
             aria-label="Add channel"
           >
+            {/* Plus add icon. */}
             <svg aria-hidden="true" focusable="false" viewBox="0 0 20 20">
               <path d="M9 4h2v5h5v2h-5v5H9v-5H4V9h5V4Z" />
             </svg>
