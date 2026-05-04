@@ -21,15 +21,18 @@ func TestMessagesHandlerListSuccess(t *testing.T) {
 	}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/messages", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
-	handler.List(rr, req)
+	handler.List(rr, req, 7)
 
 	if rr.Code != http.StatusOK {
 		t.Fatalf("expected status %d, got %d", http.StatusOK, rr.Code)
 	}
 	if repo.listCalls != 1 {
 		t.Fatalf("expected list to be called once, got %d", repo.listCalls)
+	}
+	if repo.listChannelID != 7 {
+		t.Fatalf("expected channel id 7, got %d", repo.listChannelID)
 	}
 	if contentType := rr.Header().Get("Content-Type"); contentType != "application/json" {
 		t.Fatalf("expected content type application/json, got %q", contentType)
@@ -51,9 +54,9 @@ func TestMessagesHandlerListMethodNotAllowed(t *testing.T) {
 	repo := &fakeMessageRepo{}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/messages", nil)
+	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
-	handler.List(rr, req)
+	handler.List(rr, req, 7)
 
 	if rr.Code != http.StatusMethodNotAllowed {
 		t.Fatalf("expected status %d, got %d", http.StatusMethodNotAllowed, rr.Code)
@@ -68,9 +71,9 @@ func TestMessagesHandlerListServiceError(t *testing.T) {
 	repo := &fakeMessageRepo{listErr: errors.New("boom")}
 	handler := NewMessagesHandler(messages.NewService(repo))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/messages", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
-	handler.List(rr, req)
+	handler.List(rr, req, 7)
 
 	if rr.Code != http.StatusInternalServerError {
 		t.Fatalf("expected status %d, got %d", http.StatusInternalServerError, rr.Code)

@@ -10,28 +10,28 @@ import (
 type fakeRepository struct {
 	listResult  []Message
 	listErr     error
-	createFn    func(context.Context, string) (Message, error)
+	createFn    func(context.Context, int64, int64, string) (Message, error)
 	createCalls int
-	editFn      (func(ctx context.Context, id int, body string) error)
+	editFn      (func(ctx context.Context, id int64, body string) error)
 	editCalls   int
 }
 
-func (f *fakeRepository) List(context.Context) ([]Message, error) {
+func (f *fakeRepository) ListByChannel(context.Context, int64) ([]Message, error) {
 	if f.listErr != nil {
 		return nil, f.listErr
 	}
 	return f.listResult, nil
 }
 
-func (f *fakeRepository) Create(ctx context.Context, body string) (Message, error) {
+func (f *fakeRepository) CreateInChannel(ctx context.Context, channelID int64, authorID int64, body string) (Message, error) {
 	f.createCalls++
 	if f.createFn != nil {
-		return f.createFn(ctx, body)
+		return f.createFn(ctx, channelID, authorID, body)
 	}
 	return Message{}, nil
 }
 
-func (f *fakeRepository) Edit(ctx context.Context, id int, body string) error {
+func (f *fakeRepository) Edit(ctx context.Context, id int64, body string) error {
 	f.editCalls++
 	if f.editFn != nil {
 		return f.editFn(ctx, id, body)
@@ -43,7 +43,7 @@ func TestServiceCreateRejectsEmptyBody(t *testing.T) {
 	repo := &fakeRepository{}
 	service := NewService(repo)
 
-	_, err := service.Create(context.Background(), "   \n\t ")
+	_, err := service.CreateInChannel(context.Background(), 1, 1, "   \n\t ")
 	if !errors.Is(err, ErrEmptyBody) {
 		t.Fatalf("expected ErrEmptyBody, got %v", err)
 	}
@@ -55,13 +55,13 @@ func TestServiceCreateRejectsEmptyBody(t *testing.T) {
 func TestServiceCreateTrimsBodyBeforePersisting(t *testing.T) {
 	createdAt := time.Date(2026, time.March, 10, 10, 0, 0, 0, time.UTC)
 	repo := &fakeRepository{
-		createFn: func(_ context.Context, body string) (Message, error) {
+		createFn: func(_ context.Context, _ int64, _ int64, body string) (Message, error) {
 			return Message{ID: 1, Body: body, CreatedAt: createdAt}, nil
 		},
 	}
 	service := NewService(repo)
 
-	got, err := service.Create(context.Background(), "  hello world  ")
+	got, err := service.CreateInChannel(context.Background(), 1, 1, "  hello world  ")
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}
@@ -85,11 +85,11 @@ func TestServiceEditRejectsEmptyBody(t *testing.T) {
 }
 
 func TestServiceEditTrimsBodyBeforePersisting(t *testing.T) {
-	var capturedID int
+	var capturedID int64
 	var capturedBody string
 
 	repo := &fakeRepository{
-		editFn: func(_ context.Context, id int, body string) error {
+		editFn: func(_ context.Context, id int64, body string) error {
 			capturedID = id
 			capturedBody = body
 			return nil

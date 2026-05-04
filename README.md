@@ -10,8 +10,12 @@ Frontend release assets build into `frontend/dist` and are staged into `frontend
 
 ## API
 - `GET /api/health`
-- `GET /api/messages`
-- `POST /api/messages`
+- `GET /api/channels`
+- `POST /api/channels`
+- `DELETE /api/channels/{channelID}`
+- `GET /api/channels/{channelID}/messages`
+- `POST /api/channels/{channelID}/messages`
+- `PUT /api/messages/{messageID}`
 
 ## Development
 

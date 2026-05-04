@@ -101,7 +101,7 @@ export function EditableMessageItem({
             aria-label={`Edit message #${message.id}`}
             onClick={handleEditStart}
           >
-            {/* Inline SVG for the pencil edit icon. */}
+            {/* Pencil edit icon. */}
             <svg viewBox="0 0 20 20" aria-hidden="true" focusable="false">
               <path d="M14.69 2.86a2 2 0 0 1 2.83 2.83l-8.6 8.6-3.69.86.86-3.69 8.6-8.6Zm1.41 1.42a1 1 0 0 0-1.41 0l-.8.79 1.41 1.41.8-.79a1 1 0 0 0 0-1.41ZM7.06 12.22l-.42 1.8 1.8-.42 5.64-5.64-1.41-1.41-5.61 5.67Z" />
             </svg>

@@ -24,8 +24,197 @@ h1 {
   margin: 0;
 }
 
-.card {
+.chat-layout {
   margin-top: 1.25rem;
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+}
+
+.channel-picker {
+  border: 1px solid #d6dbe2;
+  border-radius: 8px;
+  padding: 0.85rem;
+  background: #fff;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.channel-picker-content {
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.channel-picker h2,
+.messages-header h2 {
+  margin: 0;
+}
+
+.channel-status {
+  color: #5c6570;
+  margin: 0.75rem 0 0;
+}
+
+.channel-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.75rem 0 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.channel-row {
+  min-height: 2.25rem;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 2rem;
+  align-items: center;
+}
+
+.channel-row:hover,
+.channel-row:focus-within {
+  background: #f4f6f9;
+  border-color: #d3dae4;
+}
+
+.channel-row.is-selected {
+  background: #e9f0f7;
+  border-color: #b8c6d6;
+  color: #162335;
+  font-weight: 700;
+}
+
+.channel-select {
+  width: 100%;
+  min-height: 2.25rem;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  padding: 0.45rem 0.55rem;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+
+.channel-select:focus-visible {
+  outline: 2px solid #8aa9c7;
+  outline-offset: -2px;
+}
+
+.channel-delete {
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #a01818;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  justify-self: end;
+  margin-right: 0.25rem;
+  cursor: pointer;
+  opacity: 0;
+}
+
+.channel-row:hover .channel-delete,
+.channel-row:focus-within .channel-delete,
+.channel-delete:focus-visible {
+  opacity: 1;
+}
+
+.channel-delete:hover,
+.channel-delete:focus-visible {
+  background: #fdecec;
+  color: #7f1212;
+}
+
+.channel-delete:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.channel-delete svg {
+  width: 0.95rem;
+  height: 0.95rem;
+  fill: currentColor;
+}
+
+.channel-name {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.channel-create {
+  border-top: 1px solid #e5e9ef;
+  margin-top: auto;
+  padding-top: 0.75rem;
+}
+
+.channel-add-trigger,
+.channel-create-actions button {
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border: 1px solid #bcc5d1;
+  border-radius: 6px;
+  background: #f4f6f9;
+  color: #26313f;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.channel-add-trigger:hover,
+.channel-add-trigger:focus-visible,
+.channel-create-actions button:hover,
+.channel-create-actions button:focus-visible {
+  background: #e9f0f7;
+  border-color: #b8c6d6;
+}
+
+.channel-add-trigger svg,
+.channel-create-actions svg {
+  width: 1rem;
+  height: 1rem;
+  fill: currentColor;
+}
+
+.channel-create-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.channel-create-form input {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid #c7ced8;
+  border-radius: 6px;
+  padding: 0.55rem 0.6rem;
+  font: inherit;
+}
+
+.channel-create-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.channel-create-actions button:disabled,
+.channel-add-trigger:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.card {
   border: 1px solid #d6dbe2;
   border-radius: 8px;
   padding: 1rem;
@@ -38,6 +227,10 @@ h1 {
 
 .card h2 {
   margin-top: 0;
+}
+
+.messages-header {
+  margin-bottom: 1rem;
 }
 
 .messages-scroll {
@@ -195,6 +388,15 @@ h1 {
     width: 100%;
     height: 100vh;
     margin: 0;
+  }
+
+  .chat-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr);
+  }
+
+  .channel-picker {
+    max-height: 9rem;
   }
 
   .message-edit-trigger {
