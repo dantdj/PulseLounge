@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"pulselounge/internal/channels"
+	"pulselounge/internal/media"
 	"pulselounge/internal/messages"
 )
 
@@ -88,4 +89,27 @@ func (f *fakeChannelRepo) Delete(ctx context.Context, id int64) error {
 
 func testChannelService() channels.Service {
 	return channels.NewService(&fakeChannelRepo{})
+}
+
+func testMediaStore() media.Store {
+	return &fakeMediaStore{}
+}
+
+type fakeMediaStore struct {
+	saveFn func(filename string, data []byte) (string, error)
+}
+
+func (f *fakeMediaStore) Save(filename string, data []byte) (string, error) {
+	if f.saveFn != nil {
+		return f.saveFn(filename, data)
+	}
+	return "https://example.com/" + filename, nil
+}
+
+func (f *fakeMediaStore) Exists(filename string) (bool, error) {
+	return false, nil
+}
+
+func (f *fakeMediaStore) PublicURL(filename string) string {
+	return "https://example.com/" + filename
 }

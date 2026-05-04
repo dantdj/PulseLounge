@@ -8,6 +8,7 @@ import (
 	uiassets "pulselounge"
 	"pulselounge/internal/channels"
 	httpapi "pulselounge/internal/http"
+	"pulselounge/internal/media"
 	"pulselounge/internal/messages"
 )
 
@@ -31,6 +32,19 @@ func main() {
 		}
 	}()
 
+	connectionString := os.Getenv("AZURE_STORAGE_CONNECTION_STRING")
+	if connectionString == "" {
+		log.Fatal("AZURE_STORAGE_CONNECTION_STRING environment variable is required")
+	}
+	publicBaseURL := os.Getenv("MEDIA_PUBLIC_BASE_URL")
+	if publicBaseURL == "" {
+		log.Fatal("MEDIA_PUBLIC_BASE_URL environment variable is required")
+	}
+	containerName := os.Getenv("MEDIA_CONTAINER_NAME")
+	if containerName == "" {
+		log.Fatal("MEDIA_CONTAINER_NAME environment variable is required")
+	}
+
 	var uiHandler http.Handler
 	uiDevServer := os.Getenv("UI_DEV_SERVER")
 	if uiDevServer != "" {
@@ -51,7 +65,11 @@ func main() {
 	messageService := messages.NewService(messageRepo)
 	channelRepo := channels.NewPostgresRepository(db)
 	channelService := channels.NewService(channelRepo)
-	mux := httpapi.NewRouter(uiHandler, messageService, channelService)
+	blobStore, err := media.NewAzureBlobStore(connectionString, containerName, publicBaseURL)
+	if err != nil {
+		log.Fatalf("failed to configure blob storage: %v", err)
+	}
+	mux := httpapi.NewRouter(uiHandler, messageService, channelService, blobStore)
 
 	addr := ":" + port
 	log.Printf("server listening on %s", addr)

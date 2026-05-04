@@ -5,15 +5,17 @@ import (
 	"strings"
 
 	"pulselounge/internal/channels"
+	"pulselounge/internal/media"
 	"pulselounge/internal/messages"
 )
 
-func NewRouter(uiHandler http.Handler, messageService messages.Service, channelService channels.Service) *http.ServeMux {
+func NewRouter(uiHandler http.Handler, messageService messages.Service, channelService channels.Service, blobStore media.Store) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", healthHandler)
 
 	channelsHandler := NewChannelsHandler(channelService)
 	messagesHandler := NewMessagesHandler(messageService)
+	uploadHandler := NewUploadHandler(blobStore)
 	mux.HandleFunc("/api/channels", channelsHandler.Channels)
 	mux.HandleFunc("/api/channels/", func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/messages") {
@@ -24,6 +26,8 @@ func NewRouter(uiHandler http.Handler, messageService messages.Service, channelS
 	})
 
 	mux.HandleFunc("/api/messages/", messagesHandler.Message)
+
+	mux.HandleFunc("/api/upload", uploadHandler.Upload)
 
 	mux.Handle("/", uiHandler)
 	return mux

@@ -14,7 +14,7 @@ import (
 
 func TestRouterWiresListChannelMessagesEndpoint(t *testing.T) {
 	repo := &fakeMessageRepo{listResult: []messages.Message{}}
-	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService())
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService(), testMediaStore())
 
 	req := httptest.NewRequest(http.MethodGet, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
@@ -44,7 +44,7 @@ func TestRouterWiresCreateChannelMessagesEndpoint(t *testing.T) {
 			}, nil
 		},
 	}
-	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService())
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService(), testMediaStore())
 
 	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader(`{"body":"from router"}`))
 	rr := httptest.NewRecorder()
@@ -63,7 +63,7 @@ func TestRouterWiresCreateChannelMessagesEndpoint(t *testing.T) {
 
 func TestRouterWiresEditMessagesEndpoint(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService())
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(repo), testChannelService(), testMediaStore())
 
 	req := httptest.NewRequest(http.MethodPut, "/api/messages/1", strings.NewReader(`{"newBody":"updated from router"}`))
 	rr := httptest.NewRecorder()
@@ -83,6 +83,7 @@ func TestRouterWiresDeleteChannelsEndpoint(t *testing.T) {
 		http.NotFoundHandler(),
 		messages.NewService(&fakeMessageRepo{}),
 		channels.NewService(channelRepo),
+		testMediaStore(),
 	)
 
 	req := httptest.NewRequest(http.MethodDelete, "/api/channels/7", nil)
@@ -101,7 +102,7 @@ func TestRouterWiresDeleteChannelsEndpoint(t *testing.T) {
 }
 
 func TestRouterReturnsNotFoundForUnknownEndpoint(t *testing.T) {
-	mux := NewRouter(http.NotFoundHandler(), messages.NewService(&fakeMessageRepo{}), testChannelService())
+	mux := NewRouter(http.NotFoundHandler(), messages.NewService(&fakeMessageRepo{}), testChannelService(), testMediaStore())
 
 	req := httptest.NewRequest(http.MethodGet, "/api/unknown", nil)
 	rr := httptest.NewRecorder()
