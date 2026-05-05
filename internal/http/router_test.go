@@ -34,7 +34,7 @@ func TestRouterWiresListChannelMessagesEndpoint(t *testing.T) {
 func TestRouterWiresCreateChannelMessagesEndpoint(t *testing.T) {
 	createdAt := time.Date(2026, time.January, 4, 12, 0, 0, 0, time.UTC)
 	repo := &fakeMessageRepo{
-		createFn: func(_ context.Context, channelID int64, authorID int64, body string) (messages.Message, error) {
+		createFn: func(_ context.Context, channelID int64, authorID int64, body string, imageKey string) (messages.Message, error) {
 			return messages.Message{
 				ID:        10,
 				AuthorID:  authorID,

@@ -1,7 +1,7 @@
 package media
 
 type Store interface {
-	Save(fileName string, data []byte) (string, error)
-	Exists(fileName string) (bool, error)
-	PublicURL(fileName string) string
+	Save(id string, contentType string, data []byte) (string, error)
+	Exists(id string) (bool, error)
+	PublicURL(id string) string
 }

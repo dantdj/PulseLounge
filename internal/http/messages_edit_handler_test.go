@@ -12,7 +12,8 @@ import (
 
 func TestMessagesHandlerEditMethodNotAllowed(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/messages/1", nil)
 	rr := httptest.NewRecorder()
@@ -29,7 +30,8 @@ func TestMessagesHandlerEditMethodNotAllowed(t *testing.T) {
 
 func TestMessagesHandlerEditInvalidBody(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/messages/1", strings.NewReader("{"))
 	rr := httptest.NewRecorder()
@@ -46,7 +48,8 @@ func TestMessagesHandlerEditInvalidBody(t *testing.T) {
 
 func TestMessagesHandlerEditRejectsBlankBody(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/messages/1", strings.NewReader(`{"newBody":"   "}`))
 	rr := httptest.NewRecorder()
@@ -67,7 +70,8 @@ func TestMessagesHandlerEditMessageNotFound(t *testing.T) {
 			return messages.ErrMessageNotFound
 		},
 	}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/messages/999", strings.NewReader(`{"newBody":"updated msg"}`))
 	rr := httptest.NewRecorder()
@@ -86,7 +90,8 @@ func TestMessagesHandlerEditServiceError(t *testing.T) {
 	repo := &fakeMessageRepo{
 		editErr: errors.New("boom"),
 	}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPut, "/api/messages/1", strings.NewReader(`{"newBody":"updated msg"}`))
 	rr := httptest.NewRecorder()
@@ -112,7 +117,8 @@ func TestMessagesHandlerEditSuccess(t *testing.T) {
 			return nil
 		},
 	}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 	newBody := "updated msg"
 	reqBody := `{"newBody":"` + newBody + `"}`
 

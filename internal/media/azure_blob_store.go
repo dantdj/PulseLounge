@@ -8,7 +8,9 @@ import (
 	"sync"
 
 	"github.com/Azure/azure-sdk-for-go/sdk/azcore"
+	"github.com/Azure/azure-sdk-for-go/sdk/azcore/to"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob"
+	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/blob"
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 )
 
@@ -35,17 +37,21 @@ type AzureBlobStore struct {
 	containerOK   bool
 }
 
-func (s *AzureBlobStore) Save(fileName string, file []byte) (string, error) {
+func (s *AzureBlobStore) Save(id string, contentType string, file []byte) (string, error) {
 	ctx := context.Background()
 	if err := s.ensureContainer(ctx); err != nil {
 		return "", err
 	}
 
-	_, err := s.client.UploadBuffer(ctx, s.containerName, fileName, file, nil)
+	_, err := s.client.UploadBuffer(ctx, s.containerName, id, file, &azblob.UploadBufferOptions{
+		HTTPHeaders: &blob.HTTPHeaders{
+			BlobContentType: to.Ptr(contentType),
+		},
+	})
 	if err != nil {
 		return "", err
 	}
-	return s.PublicURL(fileName), nil
+	return s.PublicURL(id), nil
 }
 
 func (s *AzureBlobStore) ensureContainer(ctx context.Context) error {
@@ -71,8 +77,8 @@ func (s *AzureBlobStore) ensureContainer(ctx context.Context) error {
 	return nil
 }
 
-func (s *AzureBlobStore) Exists(fileName string) (bool, error) {
-	blobClient := s.client.ServiceClient().NewContainerClient(s.containerName).NewBlobClient(fileName)
+func (s *AzureBlobStore) Exists(id string) (bool, error) {
+	blobClient := s.client.ServiceClient().NewContainerClient(s.containerName).NewBlobClient(id)
 	_, err := blobClient.GetProperties(context.Background(), nil)
 	if err != nil {
 		var responseErr *azcore.ResponseError
@@ -84,6 +90,6 @@ func (s *AzureBlobStore) Exists(fileName string) (bool, error) {
 	return true, nil
 }
 
-func (s *AzureBlobStore) PublicURL(fileName string) string {
-	return s.publicBaseURL + "/" + fileName
+func (s *AzureBlobStore) PublicURL(id string) string {
+	return s.publicBaseURL + "/" + id
 }

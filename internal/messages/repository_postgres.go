@@ -15,7 +15,7 @@ func NewPostgresRepository(db *sql.DB) PostgresRepository {
 
 func (r PostgresRepository) ListByChannel(ctx context.Context, channelID int64) (_ []Message, err error) {
 	rows, err := r.db.QueryContext(ctx, `
-SELECT id, author_id, channel_id, body, created_at, edited_at
+SELECT id, author_id, channel_id, body, image_key, created_at, edited_at
 FROM messages
 WHERE channel_id = $1
 ORDER BY created_at, id`, channelID)
@@ -31,7 +31,7 @@ ORDER BY created_at, id`, channelID)
 	messages := make([]Message, 0)
 	for rows.Next() {
 		var m Message
-		if err := rows.Scan(&m.ID, &m.AuthorID, &m.ChannelID, &m.Body, &m.CreatedAt, &m.EditedAt); err != nil {
+		if err := rows.Scan(&m.ID, &m.AuthorID, &m.ChannelID, &m.Body, &m.ImageKey, &m.CreatedAt, &m.EditedAt); err != nil {
 			return nil, err
 		}
 		messages = append(messages, m)
@@ -43,13 +43,13 @@ ORDER BY created_at, id`, channelID)
 	return messages, nil
 }
 
-func (r PostgresRepository) CreateInChannel(ctx context.Context, channelID int64, authorID int64, body string) (Message, error) {
+func (r PostgresRepository) CreateInChannel(ctx context.Context, channelID int64, authorID int64, body string, imageKey string) (Message, error) {
 	var m Message
 	err := r.db.QueryRowContext(ctx, `
-INSERT INTO messages (author_id, channel_id, body)
-VALUES ($1, $2, $3)
-RETURNING id, author_id, channel_id, body, created_at, edited_at`, authorID, channelID, body).
-		Scan(&m.ID, &m.AuthorID, &m.ChannelID, &m.Body, &m.CreatedAt, &m.EditedAt)
+INSERT INTO messages (author_id, channel_id, body, image_key)
+VALUES ($1, $2, $3, $4)
+RETURNING id, author_id, channel_id, body, image_key, created_at, edited_at`, authorID, channelID, body, imageKey).
+		Scan(&m.ID, &m.AuthorID, &m.ChannelID, &m.Body, &m.ImageKey, &m.CreatedAt, &m.EditedAt)
 	if err != nil {
 		return Message{}, err
 	}

@@ -19,7 +19,8 @@ func TestMessagesHandlerListSuccess(t *testing.T) {
 			{ID: 2, Body: "world", CreatedAt: createdAt.Add(time.Minute)},
 		},
 	}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
@@ -52,7 +53,8 @@ func TestMessagesHandlerListSuccess(t *testing.T) {
 
 func TestMessagesHandlerListMethodNotAllowed(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
@@ -69,7 +71,8 @@ func TestMessagesHandlerListMethodNotAllowed(t *testing.T) {
 
 func TestMessagesHandlerListServiceError(t *testing.T) {
 	repo := &fakeMessageRepo{listErr: errors.New("boom")}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()

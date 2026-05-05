@@ -14,8 +14,9 @@ func NewRouter(uiHandler http.Handler, messageService messages.Service, channelS
 	mux.HandleFunc("/api/health", healthHandler)
 
 	channelsHandler := NewChannelsHandler(channelService)
-	messagesHandler := NewMessagesHandler(messageService)
+	messagesHandler := NewMessagesHandler(messageService, blobStore)
 	uploadHandler := NewUploadHandler(blobStore)
+
 	mux.HandleFunc("/api/channels", channelsHandler.Channels)
 	mux.HandleFunc("/api/channels/", func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasSuffix(r.URL.Path, "/messages") {

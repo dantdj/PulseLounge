@@ -16,7 +16,7 @@ import (
 func TestMessagesHandlerCreateSuccess(t *testing.T) {
 	createdAt := time.Date(2026, time.January, 3, 12, 0, 0, 0, time.UTC)
 	repo := &fakeMessageRepo{
-		createFn: func(_ context.Context, channelID int64, authorID int64, body string) (messages.Message, error) {
+		createFn: func(_ context.Context, channelID int64, authorID int64, body string, imageKey string) (messages.Message, error) {
 			return messages.Message{
 				ID:        9,
 				AuthorID:  authorID,
@@ -26,7 +26,8 @@ func TestMessagesHandlerCreateSuccess(t *testing.T) {
 			}, nil
 		},
 	}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader(`{"body":"new msg"}`))
 	rr := httptest.NewRecorder()
@@ -48,7 +49,8 @@ func TestMessagesHandlerCreateSuccess(t *testing.T) {
 
 func TestMessagesHandlerCreateMethodNotAllowed(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/channels/7/messages", nil)
 	rr := httptest.NewRecorder()
@@ -62,7 +64,8 @@ func TestMessagesHandlerCreateMethodNotAllowed(t *testing.T) {
 
 func TestMessagesHandlerCreateInvalidBody(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader("{"))
 	rr := httptest.NewRecorder()
@@ -79,7 +82,8 @@ func TestMessagesHandlerCreateInvalidBody(t *testing.T) {
 
 func TestMessagesHandlerCreateRejectsBlankBody(t *testing.T) {
 	repo := &fakeMessageRepo{}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader(`{"body":"   "}`))
 	rr := httptest.NewRecorder()
@@ -98,7 +102,8 @@ func TestMessagesHandlerCreateServiceError(t *testing.T) {
 	repo := &fakeMessageRepo{
 		createErr: errors.New("boom"),
 	}
-	handler := NewMessagesHandler(messages.NewService(repo))
+	store := &fakeMediaStore{}
+	handler := NewMessagesHandler(messages.NewService(repo), store)
 
 	req := httptest.NewRequest(http.MethodPost, "/api/channels/7/messages", strings.NewReader(`{"body":"new msg"}`))
 	rr := httptest.NewRecorder()

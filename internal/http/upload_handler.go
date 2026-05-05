@@ -1,15 +1,20 @@
 package httpapi
 
 import (
+	"errors"
 	"io"
 	"log"
 	"net/http"
 	"pulselounge/internal/media"
 	"sort"
 	"strings"
+
+	"github.com/google/uuid"
 )
 
 const maxUploadBytes = 10 << 20
+
+var errUnsupportedUploadType = errors.New("unsupported upload type")
 
 // Using a map for O(1) lookup. This isn't strictly necessary,
 // but useful for the future.
@@ -53,61 +58,69 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if ok, err := hasAllowedImageContent(file); err != nil {
+	contentType, extension, err := detectAllowedImage(file)
+	if err != nil {
+		if errors.Is(err, errUnsupportedUploadType) {
+			writeJSONError(w, http.StatusUnsupportedMediaType, "allowed file types: "+allowedUploadTypeList())
+			return
+		}
+
 		writeJSONError(w, http.StatusBadRequest, "failed to read file")
-		return
-	} else if !ok {
-		writeJSONError(w, http.StatusUnsupportedMediaType, "allowed file types: "+allowedUploadTypeList())
 		return
 	}
 
-	// Get bytes of the file to save to blob storage
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
 		writeJSONError(w, http.StatusInternalServerError, "failed to read file")
 		return
 	}
-	url, err := h.store.Save(handler.Filename, fileBytes)
+
+	id := uuid.New().String() + extension
+	// TODO: Strip EXIF data from images to prevent leaking user location data
+	url, err := h.store.Save(id, contentType, fileBytes)
 	if err != nil {
 		log.Printf("error saving file: %s", err.Error())
 		writeJSONError(w, http.StatusInternalServerError, "failed to save file")
 		return
 	}
-	exists, err := h.store.Exists(handler.Filename)
-	if err != nil {
-		log.Printf("error checking file existence: %s", err.Error())
-		writeJSONError(w, http.StatusInternalServerError, "failed to check file existence")
-		return
-	}
 
 	response := struct {
-		FileName string `json:"fileName"`
-		FileSize int64  `json:"fileSize"`
-		Url      string `json:"url"`
-		Exists   bool   `json:"exists"`
+		Url string `json:"url"`
+		Key string `json:"key"`
 	}{
-		FileName: handler.Filename,
-		FileSize: handler.Size,
-		Url:      url,
-		Exists:   exists,
+		Key: id,
+		Url: url,
 	}
 
 	writeJSON(w, http.StatusOK, response)
 }
 
-func hasAllowedImageContent(file io.ReadSeeker) (bool, error) {
-	buffer := make([]byte, 512)
-	n, err := file.Read(buffer)
-	if err != nil && err != io.EOF {
-		return false, err
+// detectAllowedImage reads the first 512 bytes of the file to determine its content type,
+// returning content type and file extension if it's an allowed type. It returns an error if the content type cannot be determined or is not allowed.
+func detectAllowedImage(file io.ReadSeeker) (contentType string, extension string, err error) {
+	var buffer [512]byte
+
+	n, readErr := file.Read(buffer[:])
+	if readErr != nil && readErr != io.EOF {
+		return "", "", readErr
 	}
 
-	if _, err := file.Seek(0, io.SeekStart); err != nil {
-		return false, err
+	if _, seekErr := file.Seek(0, io.SeekStart); seekErr != nil {
+		return "", "", seekErr
 	}
 
-	contentType := http.DetectContentType(buffer[:n])
-	return allowedUploadTypes[contentType], nil
+	contentType = http.DetectContentType(buffer[:n])
+
+	switch contentType {
+	case "image/jpeg":
+		return contentType, ".jpg", nil
+	case "image/png":
+		return contentType, ".png", nil
+	case "image/webp":
+		return contentType, ".webp", nil
+	default:
+		return "", "", errUnsupportedUploadType
+	}
 }
 
 func allowedUploadTypeList() string {

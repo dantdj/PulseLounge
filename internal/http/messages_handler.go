@@ -3,10 +3,12 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
 
+	"pulselounge/internal/media"
 	"pulselounge/internal/messages"
 )
 
@@ -14,10 +16,11 @@ const devAuthorID int64 = 1
 
 type MessagesHandler struct {
 	service messages.Service
+	store   media.Store
 }
 
-func NewMessagesHandler(service messages.Service) MessagesHandler {
-	return MessagesHandler{service: service}
+func NewMessagesHandler(service messages.Service, store media.Store) MessagesHandler {
+	return MessagesHandler{service: service, store: store}
 }
 
 func (h MessagesHandler) ChannelMessages(w http.ResponseWriter, r *http.Request) {
@@ -60,6 +63,7 @@ func (h MessagesHandler) List(w http.ResponseWriter, r *http.Request, channelID 
 
 	result, err := h.service.ListByChannel(r.Context(), channelID)
 	if err != nil {
+		log.Printf("failed to query messages for channel %d: %v", channelID, err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to query messages")
 		return
 	}
@@ -74,14 +78,15 @@ func (h MessagesHandler) Create(w http.ResponseWriter, r *http.Request, channelI
 	}
 
 	var req struct {
-		Body string `json:"body"`
+		Body     string `json:"body"`
+		ImageKey string `json:"imageKey"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSONError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	result, err := h.service.CreateInChannel(r.Context(), channelID, devAuthorID, req.Body)
+	result, err := h.service.CreateInChannel(r.Context(), channelID, devAuthorID, req.Body, req.ImageKey)
 	if err != nil {
 		if errors.Is(err, messages.ErrEmptyBody) {
 			writeJSONError(w, http.StatusBadRequest, err.Error())
