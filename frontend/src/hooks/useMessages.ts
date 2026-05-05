@@ -1,5 +1,5 @@
 import React from "react";
-import { createMessage, editMessage, listMessages } from "../api/messages";
+import { createMessage, editMessage, listMessages, uploadImage } from "../api/messages";
 import type { Message } from "../types";
 
 type UseMessagesResult = {
@@ -9,7 +9,7 @@ type UseMessagesResult = {
   submitError: string | null;
   isSubmitting: boolean;
   loadMessages: () => Promise<void>;
-  submitMessage: (body: string) => Promise<boolean>;
+  submitMessage: (body: string, imageFile: File | null) => Promise<boolean>;
   saveEditedMessage: (id: number, body: string) => Promise<string | null>;
 };
 
@@ -54,7 +54,7 @@ export function useMessages(channelId: number | null): UseMessagesResult {
     void loadMessages();
   }, [loadMessages]);
 
-  const submitMessage = React.useCallback(async (body: string) => {
+  const submitMessage = React.useCallback(async (body: string, imageFile: File | null) => {
     if (channelId === null) {
       setSubmitError("Choose a channel before sending a message.");
       return false;
@@ -70,7 +70,8 @@ export function useMessages(channelId: number | null): UseMessagesResult {
     setIsSubmitting(true);
 
     try {
-      const created = await createMessage(channelId, trimmedBody);
+      const uploadedImage = imageFile ? await uploadImage(imageFile) : null;
+      const created = await createMessage(channelId, trimmedBody, uploadedImage?.key);
       setMessages((currentMessages) => [...currentMessages, created]);
       return true;
     } catch (submitMessageError: unknown) {

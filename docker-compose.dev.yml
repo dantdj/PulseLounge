@@ -1,6 +1,6 @@
 services:
   api:
-    image: cosmtrek/air:v1.52.3
+    image: cosmtrek/air:v1.65.1
     working_dir: /app
     command: ["air", "-c", ".air.toml"]
     environment:
@@ -12,6 +12,9 @@ services:
       POSTGRES_USER: "${POSTGRES_USER:-postgres}"
       POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:-postgres}"
       POSTGRES_SSLMODE: "${POSTGRES_SSLMODE:-disable}"
+      AZURE_STORAGE_CONNECTION_STRING: "DefaultEndpointsProtocol=http;AccountName=devstoreaccount1;AccountKey=Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==;BlobEndpoint=http://azurite:10000/devstoreaccount1;QueueEndpoint=http://azurite:10001/devstoreaccount1;TableEndpoint=http://azurite:10002/devstoreaccount1;"
+      MEDIA_CONTAINER_NAME: "chat-images"
+      MEDIA_PUBLIC_BASE_URL: "http://localhost:10000/devstoreaccount1/chat-images"
     ports:
       - "${APP_PORT:-8080}:8080"
     volumes:
@@ -21,6 +24,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      azurite:
+        condition: service_started
 
   ui:
     image: node:20-alpine
@@ -53,8 +58,27 @@ services:
       timeout: 5s
       retries: 10
 
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite:latest
+    entrypoint: azurite
+    command: 
+    - "--blobHost"
+    - "0.0.0.0"
+    - "--queueHost"
+    - "0.0.0.0"
+    - "--tableHost"
+    - "0.0.0.0"
+    - "--skipApiVersionCheck"
+    ports:
+      - "10000:10000" # Blob service
+      - "10001:10001" # Queue service
+      - "10002:10002" # Table service
+    volumes:
+      - azurite_data:/data
+
 volumes:
   pulselounge_pgdata:
   pulselounge_node_modules:
   pulselounge_gomodcache:
   pulselounge_gocache:
+  azurite_data:

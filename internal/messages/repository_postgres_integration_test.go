@@ -77,7 +77,7 @@ ON CONFLICT (id) DO NOTHING`); err != nil {
 		}
 	})
 
-	created, err := repo.CreateInChannel(ctx, 1, 1, bodyPrefix)
+	created, err := repo.CreateInChannel(ctx, 1, 1, bodyPrefix, "")
 	if err != nil {
 		t.Fatalf("Create returned error: %v", err)
 	}

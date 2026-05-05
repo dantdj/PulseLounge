@@ -120,6 +120,99 @@ describe("App", () => {
     });
   });
 
+  it("uploads a selected image before creating the message", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce(createResponse(channelsResponse));
+    fetchMock.mockResolvedValueOnce(createResponse([]));
+    fetchMock.mockResolvedValueOnce(createResponse({ key: "image-key.png", url: "/media/image-key.png" }));
+    fetchMock.mockResolvedValueOnce(
+      createResponse({
+        id: 2,
+        author_id: 1,
+        channel_id: 1,
+        body: "With image",
+        image: "/media/image-key.png",
+        created_at: "2026-03-17T18:05:00Z",
+        edited_at: null,
+      }, 201),
+    );
+
+    render(<App />);
+
+    await waitFor(() => {
+      expect(screen.getByText("No messages yet.")).toBeInTheDocument();
+    });
+
+    const input = screen.getByLabelText("New message");
+    const imageInput = screen.getByLabelText("Add image");
+    const file = new File(["image-bytes"], "photo.png", { type: "image/png" });
+
+    await user.type(input, "With image");
+    await user.upload(imageInput, file);
+    expect(screen.getByText("photo.png")).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Send" }));
+
+    expect(await screen.findByText("With image")).toBeInTheDocument();
+    expect(screen.queryByText("photo.png")).not.toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(fetchMock).toHaveBeenCalledTimes(4);
+    });
+
+    const uploadOptions = fetchMock.mock.calls[2]?.[1] as RequestInit;
+    expect(fetchMock.mock.calls[2]?.[0]).toBe("/api/upload");
+    expect(uploadOptions).toMatchObject({
+      method: "POST",
+    });
+    expect(uploadOptions.body).toBeInstanceOf(FormData);
+
+    expect(fetchMock.mock.calls[3]?.[0]).toBe("/api/channels/1/messages");
+    expect(fetchMock.mock.calls[3]?.[1]).toMatchObject({
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ body: "With image", imageKey: "image-key.png" }),
+    });
+  });
+
+  it("renders image attachments and opens them in a lightbox", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce(createResponse(channelsResponse));
+    fetchMock.mockResolvedValueOnce(
+      createResponse([
+        {
+          id: 1,
+          author_id: 1,
+          channel_id: 1,
+          body: "Image message",
+          image: "/media/image-key.png",
+          created_at: "2026-03-17T18:00:00Z",
+          edited_at: null,
+        },
+      ]),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByText("Image message")).toBeInTheDocument();
+
+    const preview = screen.getByRole("button", { name: "Open image attached to message #1" });
+    expect(screen.getByRole("img", { name: "Attachment for message #1" })).toHaveAttribute(
+      "src",
+      "/media/image-key.png",
+    );
+
+    await user.click(preview);
+
+    expect(screen.getByRole("dialog", { name: "Image attached to message #1" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close image preview" }));
+
+    expect(screen.queryByRole("dialog", { name: "Image attached to message #1" })).not.toBeInTheDocument();
+  });
+
   it("shows load failures from the API", async () => {
     fetchMock.mockResolvedValueOnce(createResponse(channelsResponse));
     fetchMock.mockResolvedValueOnce(createResponse({ error: "database offline" }, 500));

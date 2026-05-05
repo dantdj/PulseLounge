@@ -3,10 +3,13 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
+	"pulselounge/internal/media"
 	"pulselounge/internal/messages"
 )
 
@@ -14,10 +17,21 @@ const devAuthorID int64 = 1
 
 type MessagesHandler struct {
 	service messages.Service
+	store   media.Store
 }
 
-func NewMessagesHandler(service messages.Service) MessagesHandler {
-	return MessagesHandler{service: service}
+type messageResponse struct {
+	ID        int64      `json:"id"`
+	AuthorID  int64      `json:"author_id"`
+	ChannelID int64      `json:"channel_id"`
+	Body      string     `json:"body"`
+	Image     string     `json:"image,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	EditedAt  *time.Time `json:"edited_at"`
+}
+
+func NewMessagesHandler(service messages.Service, store media.Store) MessagesHandler {
+	return MessagesHandler{service: service, store: store}
 }
 
 func (h MessagesHandler) ChannelMessages(w http.ResponseWriter, r *http.Request) {
@@ -60,11 +74,12 @@ func (h MessagesHandler) List(w http.ResponseWriter, r *http.Request, channelID 
 
 	result, err := h.service.ListByChannel(r.Context(), channelID)
 	if err != nil {
+		log.Printf("failed to query messages for channel %d: %v", channelID, err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to query messages")
 		return
 	}
 
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, h.messageResponses(result))
 }
 
 func (h MessagesHandler) Create(w http.ResponseWriter, r *http.Request, channelID int64) {
@@ -74,14 +89,15 @@ func (h MessagesHandler) Create(w http.ResponseWriter, r *http.Request, channelI
 	}
 
 	var req struct {
-		Body string `json:"body"`
+		Body     string `json:"body"`
+		ImageKey string `json:"imageKey"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeJSONError(w, http.StatusBadRequest, "invalid request body")
 		return
 	}
 
-	result, err := h.service.CreateInChannel(r.Context(), channelID, devAuthorID, req.Body)
+	result, err := h.service.CreateInChannel(r.Context(), channelID, devAuthorID, req.Body, req.ImageKey)
 	if err != nil {
 		if errors.Is(err, messages.ErrEmptyBody) {
 			writeJSONError(w, http.StatusBadRequest, err.Error())
@@ -91,7 +107,7 @@ func (h MessagesHandler) Create(w http.ResponseWriter, r *http.Request, channelI
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, result)
+	writeJSON(w, http.StatusCreated, h.messageResponse(result))
 }
 
 func (h MessagesHandler) Edit(w http.ResponseWriter, r *http.Request, messageID int64) {
@@ -147,4 +163,29 @@ func positiveInt64(value string) (int64, bool) {
 		return 0, false
 	}
 	return id, true
+}
+
+func (h MessagesHandler) messageResponse(message messages.Message) messageResponse {
+	response := messageResponse{
+		ID:        message.ID,
+		AuthorID:  message.AuthorID,
+		ChannelID: message.ChannelID,
+		Body:      message.Body,
+		CreatedAt: message.CreatedAt,
+		EditedAt:  message.EditedAt,
+	}
+
+	if message.ImageKey != nil && *message.ImageKey != "" {
+		response.Image = h.store.PublicURL(*message.ImageKey)
+	}
+
+	return response
+}
+
+func (h MessagesHandler) messageResponses(messageList []messages.Message) []messageResponse {
+	responses := make([]messageResponse, 0, len(messageList))
+	for _, message := range messageList {
+		responses = append(responses, h.messageResponse(message))
+	}
+	return responses
 }

@@ -11,6 +11,7 @@ type ChatViewProps = {
 
 export function ChatView({ selectedChannel, selectedChannelId }: ChatViewProps) {
   const [newMessageBody, setNewMessageBody] = React.useState("");
+  const [selectedImage, setSelectedImage] = React.useState<File | null>(null);
   const {
     messages,
     loading,
@@ -24,13 +25,15 @@ export function ChatView({ selectedChannel, selectedChannelId }: ChatViewProps) 
 
   React.useEffect(() => {
     setNewMessageBody("");
+    setSelectedImage(null);
   }, [selectedChannelId]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const submitted = await submitMessage(newMessageBody);
+    const submitted = await submitMessage(newMessageBody, selectedImage);
     if (submitted) {
       setNewMessageBody("");
+      setSelectedImage(null);
     }
   };
 
@@ -49,9 +52,11 @@ export function ChatView({ selectedChannel, selectedChannelId }: ChatViewProps) 
 
       <MessageComposer
         value={newMessageBody}
+        selectedImage={selectedImage}
         isSubmitting={isSubmitting || selectedChannelId === null}
         submitError={submitError}
         onChange={setNewMessageBody}
+        onImageChange={setSelectedImage}
         onRefresh={() => {
           void loadMessages();
         }}

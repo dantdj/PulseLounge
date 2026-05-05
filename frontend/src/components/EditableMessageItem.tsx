@@ -14,6 +14,8 @@ export function EditableMessageItem({
   const [draftBody, setDraftBody] = React.useState(message.body);
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
+  const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
+  const lightboxRef = React.useRef<HTMLDivElement>(null);
 
   React.useEffect(() => {
     if (!isEditing) {
@@ -21,6 +23,12 @@ export function EditableMessageItem({
       setSaveError(null);
     }
   }, [isEditing, message.body]);
+
+  React.useEffect(() => {
+    if (isLightboxOpen) {
+      lightboxRef.current?.focus();
+    }
+  }, [isLightboxOpen]);
 
   const handleEditStart = () => {
     setDraftBody(message.body);
@@ -90,7 +98,50 @@ export function EditableMessageItem({
       ) : (
         <div className="message-display">
           <div className="message-copy">
-            <p className="message-body">{message.body}</p>
+            {message.body && <p className="message-body">{message.body}</p>}
+            {message.image && (
+              <>
+                <button
+                  type="button"
+                  className="message-image-preview"
+                  aria-label={`Open image attached to message #${message.id}`}
+                  onClick={() => setIsLightboxOpen(true)}
+                >
+                  <img src={message.image} alt={`Attachment for message #${message.id}`} />
+                </button>
+                {isLightboxOpen && (
+                  <div
+                    ref={lightboxRef}
+                    className="image-lightbox"
+                    role="dialog"
+                    aria-modal="true"
+                    aria-label={`Image attached to message #${message.id}`}
+                    onClick={() => setIsLightboxOpen(false)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Escape") {
+                        setIsLightboxOpen(false);
+                      }
+                    }}
+                    tabIndex={-1}
+                  >
+                    <button
+                      type="button"
+                      className="image-lightbox-close"
+                      aria-label="Close image preview"
+                      onClick={() => setIsLightboxOpen(false)}
+                    >
+                      ×
+                    </button>
+                    <img
+                      className="image-lightbox-image"
+                      src={message.image}
+                      alt={`Attachment for message #${message.id}`}
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                  </div>
+                )}
+              </>
+            )}
             <p className="message-meta">
               #{message.id} · {new Date(message.created_at).toLocaleString()}
             </p>

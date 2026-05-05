@@ -19,7 +19,8 @@ dev-up: ## Start hot-reload dev stack (Go + Vite + Postgres)
 	$(COMPOSE) -f docker-compose.dev.yml up -d postgres
 	# migrate-up waits for Postgres to accept connections before running goose.
 	$(MAKE) migrate-up
-	$(COMPOSE) -f docker-compose.dev.yml up api ui
+	${COMPOSE} -f docker-compose.dev.yml up -d azurite
+	$(COMPOSE) -f docker-compose.dev.yml up api ui 
 
 dev-down: ## Stop hot-reload dev stack
 	$(COMPOSE) -f docker-compose.dev.yml down
