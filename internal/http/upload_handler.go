@@ -51,7 +51,11 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		writeJSONError(w, http.StatusBadRequest, "failed to retrieve file")
 		return
 	}
-	defer file.Close()
+	defer func() {
+		if closeErr := file.Close(); closeErr != nil {
+			log.Printf("error closing uploaded file: %s", closeErr.Error())
+		}
+	}()
 
 	if handler.Size > maxUploadBytes {
 		writeJSONError(w, http.StatusRequestEntityTooLarge, "file exceeds 10MB limit")
