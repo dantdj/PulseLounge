@@ -103,6 +103,7 @@ func (h MessagesHandler) Create(w http.ResponseWriter, r *http.Request, channelI
 			writeJSONError(w, http.StatusBadRequest, err.Error())
 			return
 		}
+		log.Printf("failed to create message in channel %d: %v", channelID, err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to create message")
 		return
 	}
@@ -132,6 +133,7 @@ func (h MessagesHandler) Edit(w http.ResponseWriter, r *http.Request, messageID 
 		case errors.Is(err, messages.ErrMessageNotFound):
 			writeJSONError(w, http.StatusNotFound, err.Error())
 		default:
+			log.Printf("failed to edit message %d: %v", messageID, err)
 			writeJSONError(w, http.StatusInternalServerError, "failed to edit message")
 		}
 		return

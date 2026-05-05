@@ -42,6 +42,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseMultipartForm(maxUploadBytes)
 	if err != nil {
+		log.Printf("failed to parse upload form: %v", err)
 		writeJSONError(w, http.StatusBadRequest, "failed to parse form data")
 		return
 	}
@@ -75,6 +76,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	fileBytes, err := io.ReadAll(file)
 	if err != nil {
+		log.Printf("failed to read uploaded file %q: %v", handler.Filename, err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to read file")
 		return
 	}
@@ -83,7 +85,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	// TODO: Strip EXIF data from images to prevent leaking user location data
 	url, err := h.store.Save(id, contentType, fileBytes)
 	if err != nil {
-		log.Printf("error saving file: %s", err.Error())
+		log.Printf("failed to save uploaded file %q as %q: %v", handler.Filename, id, err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to save file")
 		return
 	}
