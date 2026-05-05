@@ -179,6 +179,44 @@ describe("App", () => {
     });
   });
 
+  it("renders image attachments and opens them in a lightbox", async () => {
+    const user = userEvent.setup();
+    fetchMock.mockResolvedValueOnce(createResponse(channelsResponse));
+    fetchMock.mockResolvedValueOnce(
+      createResponse([
+        {
+          id: 1,
+          author_id: 1,
+          channel_id: 1,
+          body: "Image message",
+          image: {
+            url: "/media/image-key.png",
+          },
+          created_at: "2026-03-17T18:00:00Z",
+          edited_at: null,
+        },
+      ]),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByText("Image message")).toBeInTheDocument();
+
+    const preview = screen.getByRole("button", { name: "Open image attached to message #1" });
+    expect(screen.getByRole("img", { name: "Attachment for message #1" })).toHaveAttribute(
+      "src",
+      "/media/image-key.png",
+    );
+
+    await user.click(preview);
+
+    expect(screen.getByRole("dialog", { name: "Image attached to message #1" })).toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "Close image preview" }));
+
+    expect(screen.queryByRole("dialog", { name: "Image attached to message #1" })).not.toBeInTheDocument();
+  });
+
   it("shows load failures from the API", async () => {
     fetchMock.mockResolvedValueOnce(createResponse(channelsResponse));
     fetchMock.mockResolvedValueOnce(createResponse({ error: "database offline" }, 500));

@@ -339,6 +339,80 @@ h1 {
   white-space: pre-wrap;
 }
 
+.message-image-preview {
+  display: block;
+  width: fit-content;
+  max-width: min(14rem, 100%);
+  margin-top: 0.6rem;
+  padding: 0;
+  border: 1px solid #d3dae4;
+  border-radius: 8px;
+  background: #f7f9fc;
+  cursor: zoom-in;
+  overflow: hidden;
+}
+
+.message-body + .message-image-preview {
+  margin-top: 0.65rem;
+}
+
+.message-image-preview:hover,
+.message-image-preview:focus-visible {
+  border-color: #8aa9c7;
+  box-shadow: 0 0 0 3px rgb(138 169 199 / 22%);
+  outline: none;
+}
+
+.message-image-preview img {
+  display: block;
+  max-width: 100%;
+  max-height: 10rem;
+  object-fit: cover;
+}
+
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background: rgb(15 23 32 / 82%);
+  cursor: zoom-out;
+}
+
+.image-lightbox-image {
+  max-width: min(92vw, 72rem);
+  max-height: 86vh;
+  border-radius: 10px;
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 35%);
+  object-fit: contain;
+  cursor: default;
+}
+
+.image-lightbox-close {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 999px;
+  background: rgb(15 23 32 / 72%);
+  color: #fff;
+  font: inherit;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.image-lightbox-close:hover,
+.image-lightbox-close:focus-visible {
+  background: rgb(255 255 255 / 18%);
+  outline: none;
+}
+
 .message-meta {
   margin: 0.35rem 0 0;
   color: #5c6570;
