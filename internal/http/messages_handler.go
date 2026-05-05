@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"pulselounge/internal/media"
 	"pulselounge/internal/messages"
@@ -17,6 +18,16 @@ const devAuthorID int64 = 1
 type MessagesHandler struct {
 	service messages.Service
 	store   media.Store
+}
+
+type messageResponse struct {
+	ID        int64      `json:"id"`
+	AuthorID  int64      `json:"author_id"`
+	ChannelID int64      `json:"channel_id"`
+	Body      string     `json:"body"`
+	Image     string     `json:"image,omitempty"`
+	CreatedAt time.Time  `json:"created_at"`
+	EditedAt  *time.Time `json:"edited_at"`
 }
 
 func NewMessagesHandler(service messages.Service, store media.Store) MessagesHandler {
@@ -68,7 +79,7 @@ func (h MessagesHandler) List(w http.ResponseWriter, r *http.Request, channelID 
 		return
 	}
 
-	writeJSON(w, http.StatusOK, result)
+	writeJSON(w, http.StatusOK, h.messageResponses(result))
 }
 
 func (h MessagesHandler) Create(w http.ResponseWriter, r *http.Request, channelID int64) {
@@ -96,7 +107,7 @@ func (h MessagesHandler) Create(w http.ResponseWriter, r *http.Request, channelI
 		return
 	}
 
-	writeJSON(w, http.StatusCreated, result)
+	writeJSON(w, http.StatusCreated, h.messageResponse(result))
 }
 
 func (h MessagesHandler) Edit(w http.ResponseWriter, r *http.Request, messageID int64) {
@@ -152,4 +163,29 @@ func positiveInt64(value string) (int64, bool) {
 		return 0, false
 	}
 	return id, true
+}
+
+func (h MessagesHandler) messageResponse(message messages.Message) messageResponse {
+	response := messageResponse{
+		ID:        message.ID,
+		AuthorID:  message.AuthorID,
+		ChannelID: message.ChannelID,
+		Body:      message.Body,
+		CreatedAt: message.CreatedAt,
+		EditedAt:  message.EditedAt,
+	}
+
+	if message.ImageKey != nil && *message.ImageKey != "" {
+		response.Image = h.store.PublicURL(*message.ImageKey)
+	}
+
+	return response
+}
+
+func (h MessagesHandler) messageResponses(messageList []messages.Message) []messageResponse {
+	responses := make([]messageResponse, 0, len(messageList))
+	for _, message := range messageList {
+		responses = append(responses, h.messageResponse(message))
+	}
+	return responses
 }
