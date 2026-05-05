@@ -24,4 +24,4 @@ Database schema changes live in `db/migrations` and are applied with `goose` via
 
 ## Notes
 
-The UI here is largely developed by AI - it's here more to provide a client for the backend than to be an example of my UI work. 
+The UI here is largely written by AI - it's here more to provide a client for the backend than to be an example of my UI work. 
