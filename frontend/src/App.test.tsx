@@ -131,9 +131,7 @@ describe("App", () => {
         author_id: 1,
         channel_id: 1,
         body: "With image",
-        image: {
-          url: "/media/image-key.png",
-        },
+        image: "/media/image-key.png",
         created_at: "2026-03-17T18:05:00Z",
         edited_at: null,
       }, 201),
@@ -189,9 +187,7 @@ describe("App", () => {
           author_id: 1,
           channel_id: 1,
           body: "Image message",
-          image: {
-            url: "/media/image-key.png",
-          },
+          image: "/media/image-key.png",
           created_at: "2026-03-17T18:00:00Z",
           edited_at: null,
         },
