@@ -3,6 +3,9 @@ export type Message = {
   author_id: number;
   channel_id: number;
   body: string;
+  image?: {
+    url: string;
+  };
   created_at: string;
   edited_at: string | null;
 };

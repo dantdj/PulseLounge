@@ -272,7 +272,8 @@ h1 {
   margin-top: 0.65rem;
 }
 
-.message-form button {
+.message-form button,
+.image-picker-button {
   border: 1px solid #bcc5d1;
   border-radius: 6px;
   background: #f4f6f9;
@@ -282,9 +283,31 @@ h1 {
   cursor: pointer;
 }
 
-.message-form button:disabled {
+.message-form button:disabled,
+.image-picker-button.is-disabled {
   opacity: 0.65;
   cursor: not-allowed;
+}
+
+.image-picker-button {
+  display: inline-flex;
+  align-items: center;
+}
+
+.selected-image {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  color: #415063;
+  font-size: 0.95rem;
+}
+
+.selected-image span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .message-list {
