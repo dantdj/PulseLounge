@@ -52,18 +52,18 @@ func (h MessagesHandler) ChannelMessages(w http.ResponseWriter, r *http.Request)
 }
 
 func (h MessagesHandler) Message(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPut {
+		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
+		return
+	}
+
 	messageID, ok := messageIDFromPath(r.URL.Path)
 	if !ok {
 		writeJSONError(w, http.StatusBadRequest, "invalid message id")
 		return
 	}
 
-	switch r.Method {
-	case http.MethodPut:
-		h.Edit(w, r, messageID)
-	default:
-		writeJSONError(w, http.StatusMethodNotAllowed, "method not allowed")
-	}
+	h.Edit(w, r, messageID)
 }
 
 func (h MessagesHandler) List(w http.ResponseWriter, r *http.Request, channelID int64) {
