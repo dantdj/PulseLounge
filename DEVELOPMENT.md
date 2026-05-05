@@ -2,7 +2,7 @@
 
 ## Environment
 
-Configuration lives in `.env` (create your own from `.env.example`).
+Configuration lives in the `.env` file (create your own from `.env.example`).
 
 ## Local VSCode TypeScript Setup
 
