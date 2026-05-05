@@ -2,13 +2,13 @@
 
 ## Environment
 
-Configuration lives in `.env` (create from `.env.example`).
+Configuration lives in `.env` (create your own from `.env.example`).
 
-## VSCode Workspace (Open Repo Root)
+## Local VSCode TypeScript Setup
 
-If you open the full repo in VSCode, the React TypeScript project still resolves from `frontend/`.
+You can open the full repo root in VSCode. The React TypeScript project resolves from `frontend/`, and the repo settings point VSCode at the frontend workspace TypeScript SDK.
 
-One-time setup:
+Install the frontend dependencies once so VSCode has the local TypeScript SDK and React types available:
 ```bash
 cd frontend
 npm ci
@@ -16,7 +16,7 @@ npm ci
 
 Notes:
 - `.vscode/settings.json` points VSCode TypeScript to `frontend/node_modules/typescript/lib`.
-- If you see errors in the TS in VSCode, `frontend/node_modules` is likely incomplete. Re-run `npm ci` in `frontend/`.
+- If you see TypeScript errors in VSCode after opening the repo root, `frontend/node_modules` is likely incomplete or corrupted in some way. Re-run `npm ci` in `frontend/`.
 
 ## Docker Hot Reload (Go + JS)
 
@@ -29,23 +29,23 @@ Run:
 make dev-up
 ```
 
-Open:
-- App (Go API + Vite UI proxy): [http://localhost:8080](http://localhost:8080)
-- UI (direct Vite HMR): [http://localhost:5173](http://localhost:5173)
-- API (Go, auto-reload): [http://localhost:8080/api/health](http://localhost:8080/api/health)
+The following links can then be used to access various bits:
+- App (likely what you want): [http://localhost:8080](http://localhost:8080)
+- UI: [http://localhost:5173](http://localhost:5173)
+- API: [http://localhost:8080/api/health](http://localhost:8080/api/health)
 
 Notes:
 - `make dev-up` starts Postgres, runs pending migrations, then attaches to the API and UI dev services.
 - The wait-for-database step happens inside `make migrate-up`; it retries the Postgres connection before running `goose`.
 - `http://localhost:8080` proxies frontend routes to Vite in dev mode.
 - Frontend requests to `/api/*` are proxied by Vite to the Go container.
-- This dev setup mounts your source tree into containers, so file edits reload automatically.
+- This dev setup mounts the source tree into containers, so file edits reload automatically.
 - Stop and remove containers with:
   ```bash
   make dev-down
   ```
 
-## Makefile Shortcuts
+## Makefile Commands
 
 ```bash
 make help
