@@ -5,6 +5,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"pulselounge/internal/images"
 	"pulselounge/internal/media"
 	"sort"
 	"strings"
@@ -63,7 +64,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	contentType, extension, err := detectAllowedImage(file)
+	contentType, err := detectAllowedUploadType(file)
 	if err != nil {
 		if errors.Is(err, errUnsupportedUploadType) {
 			writeJSONError(w, http.StatusUnsupportedMediaType, "allowed file types: "+allowedUploadTypeList())
@@ -74,16 +75,15 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fileBytes, err := io.ReadAll(file)
+	normalizedImage, err := images.NormalizeImageToPNG(file, contentType)
 	if err != nil {
-		log.Printf("failed to read uploaded file %q: %v", handler.Filename, err)
-		writeJSONError(w, http.StatusInternalServerError, "failed to read file")
+		log.Printf("failed to normalize uploaded file %q: %v", handler.Filename, err)
+		writeJSONError(w, http.StatusInternalServerError, "failed to normalize file")
 		return
 	}
 
-	id := uuid.New().String() + extension
-	// TODO: Strip EXIF data from images to prevent leaking user location data
-	url, err := h.store.Save(id, contentType, fileBytes)
+	id := uuid.New().String() + ".png"
+	url, err := h.store.Save(id, "image/png", normalizedImage)
 	if err != nil {
 		log.Printf("failed to save uploaded file %q as %q: %v", handler.Filename, id, err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to save file")
@@ -101,32 +101,26 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, response)
 }
 
-// detectAllowedImage reads the first 512 bytes of the file to determine its content type,
-// returning content type and file extension if it's an allowed type. It returns an error if the content type cannot be determined or is not allowed.
-func detectAllowedImage(file io.ReadSeeker) (contentType string, extension string, err error) {
+// detectAllowedUploadType reads the first 512 bytes of the file to determine its content type,
+// returning an error if the content type cannot be determined or is not allowed.
+func detectAllowedUploadType(file io.ReadSeeker) (contentType string, err error) {
 	var buffer [512]byte
 
 	n, readErr := file.Read(buffer[:])
 	if readErr != nil && readErr != io.EOF {
-		return "", "", readErr
+		return "", readErr
 	}
 
 	if _, seekErr := file.Seek(0, io.SeekStart); seekErr != nil {
-		return "", "", seekErr
+		return "", seekErr
 	}
 
 	contentType = http.DetectContentType(buffer[:n])
-
-	switch contentType {
-	case "image/jpeg":
-		return contentType, ".jpg", nil
-	case "image/png":
-		return contentType, ".png", nil
-	case "image/webp":
-		return contentType, ".webp", nil
-	default:
-		return "", "", errUnsupportedUploadType
+	if !allowedUploadTypes[contentType] {
+		return "", errUnsupportedUploadType
 	}
+
+	return contentType, nil
 }
 
 func allowedUploadTypeList() string {
