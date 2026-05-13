@@ -15,7 +15,14 @@ export function EditableMessageItem({
   const [saveError, setSaveError] = React.useState<string | null>(null);
   const [isSaving, setIsSaving] = React.useState(false);
   const [isLightboxOpen, setIsLightboxOpen] = React.useState(false);
+  const [previewImageSrc, setPreviewImageSrc] = React.useState(
+    message.image_thumbnail ?? message.image ?? "",
+  );
   const lightboxRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    setPreviewImageSrc(message.image_thumbnail ?? message.image ?? "");
+  }, [message.image, message.image_thumbnail]);
 
   React.useEffect(() => {
     if (!isEditing) {
@@ -107,7 +114,15 @@ export function EditableMessageItem({
                   aria-label={`Open image attached to message #${message.id}`}
                   onClick={() => setIsLightboxOpen(true)}
                 >
-                  <img src={message.image} alt={`Attachment for message #${message.id}`} />
+                  <img
+                    src={previewImageSrc}
+                    alt={`Attachment for message #${message.id}`}
+                    onError={() => {
+                      if (previewImageSrc !== message.image) {
+                        setPreviewImageSrc(message.image ?? "");
+                      }
+                    }}
+                  />
                 </button>
                 {isLightboxOpen && (
                   <div
