@@ -14,6 +14,9 @@ import (
 	"github.com/Azure/azure-sdk-for-go/sdk/storage/azblob/container"
 )
 
+// TODO: Should pull this from some kind of config at some point
+var thumbnailFolder = "thumbs/"
+
 func NewAzureBlobStore(connectionString string, containerName string, publicBaseURL string) (*AzureBlobStore, error) {
 	client, err := azblob.NewClientFromConnectionString(connectionString, nil)
 	if err != nil {
@@ -92,4 +95,8 @@ func (s *AzureBlobStore) Exists(id string) (bool, error) {
 
 func (s *AzureBlobStore) PublicURL(id string) string {
 	return s.publicBaseURL + "/" + id
+}
+
+func ThumbnailKey(id string) string {
+	return thumbnailFolder + id
 }
