@@ -4,17 +4,27 @@ import (
 	"bytes"
 	"image"
 	"image/png"
+	"log"
+	"math"
+	"time"
 
-	"github.com/nfnt/resize"
+	"golang.org/x/image/draw"
 )
 
-// ResizeImage takes an image and resizes it to the specified width and height, returning the resized image as a PNG byte slice.
-// It uses nfnt/resize for resizing, which is an archived library. In the future we may want to consider switching to a more actively maintained library for image resizing.
-func ResizeImage(image image.Image, width, height int) ([]byte, error) {
-	resizedImg := resize.Resize(uint(width), uint(height), image, resize.Lanczos3)
+func ResizeImage(img image.Image, width int) ([]byte, error) {
+	start := time.Now()
+	defer func() {
+		log.Printf("resizing image took %v", time.Since(start))
+	}()
+	ratio := (float64)(img.Bounds().Max.Y) / (float64)(img.Bounds().Max.X)
+	newHeight := int(math.Round(float64(width) * ratio))
+
+	dst := image.NewRGBA(image.Rect(0, 0, width, newHeight))
+
+	draw.CatmullRom.Scale(dst, dst.Rect, img, img.Bounds(), draw.Over, nil)
 
 	var out bytes.Buffer
-	if err := png.Encode(&out, resizedImg); err != nil {
+	if err := png.Encode(&out, dst); err != nil {
 		return nil, err
 	}
 

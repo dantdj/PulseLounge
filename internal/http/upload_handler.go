@@ -93,7 +93,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	// Best effort attempt to make a thumbnail, if it fails we don't want to fail the whole upload
 	// The UI should handle missing thumbnails gracefully
-	thumbnailBytes, err := images.ResizeImage(img, 200, 200)
+	thumbnailBytes, err := images.ResizeImage(img, 200)
 	if err != nil {
 		log.Printf("failed to create thumbnail for uploaded file %q: %v", handler.Filename, err)
 	}
