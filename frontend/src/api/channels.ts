@@ -1,20 +1,8 @@
 import type { Channel } from "../types";
-
-async function getErrorMessage(response: Response): Promise<string> {
-  try {
-    const data = (await response.json()) as { error?: string };
-    if (data.error) {
-      return data.error;
-    }
-  } catch {
-    // Fall back to the status code when the response isn't JSON.
-  }
-
-  return `request failed with status ${response.status}`;
-}
+import { fetchWithRetry, getErrorMessage } from "./request";
 
 export async function listChannels(): Promise<Channel[]> {
-  const response = await fetch("/api/channels");
+  const response = await fetchWithRetry("/api/channels");
   if (!response.ok) {
     throw new Error(await getErrorMessage(response));
   }

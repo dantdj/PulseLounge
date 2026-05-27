@@ -108,10 +108,6 @@ func (f *fakeMediaStore) Save(id string, contentType string, data []byte) (strin
 	return "https://example.com/" + id, nil
 }
 
-func (f *fakeMediaStore) Exists(id string) (bool, error) {
-	return false, nil
-}
-
 func (f *fakeMediaStore) PublicURL(id string) string {
 	return "https://example.com/" + id
 }

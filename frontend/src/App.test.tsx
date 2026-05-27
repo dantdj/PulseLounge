@@ -251,6 +251,8 @@ describe("App", () => {
   it("shows load failures from the API", async () => {
     fetchMock.mockResolvedValueOnce(createResponse(channelsResponse));
     fetchMock.mockResolvedValueOnce(createResponse({ error: "database offline" }, 500));
+    fetchMock.mockResolvedValueOnce(createResponse({ error: "database offline" }, 500));
+    fetchMock.mockResolvedValueOnce(createResponse({ error: "database offline" }, 500));
 
     render(<App />);
 
@@ -260,6 +262,8 @@ describe("App", () => {
   });
 
   it("shows channel load failures", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse({ error: "channels offline" }, 500));
+    fetchMock.mockResolvedValueOnce(createResponse({ error: "channels offline" }, 500));
     fetchMock.mockResolvedValueOnce(createResponse({ error: "channels offline" }, 500));
 
     render(<App />);
