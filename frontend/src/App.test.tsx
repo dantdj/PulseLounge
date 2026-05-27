@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
@@ -188,6 +188,7 @@ describe("App", () => {
           channel_id: 1,
           body: "Image message",
           image: "/media/image-key.png",
+          image_thumbnail: "/media/thumbs/image-key.png",
           created_at: "2026-03-17T18:00:00Z",
           edited_at: null,
         },
@@ -201,16 +202,50 @@ describe("App", () => {
     const preview = screen.getByRole("button", { name: "Open image attached to message #1" });
     expect(screen.getByRole("img", { name: "Attachment for message #1" })).toHaveAttribute(
       "src",
-      "/media/image-key.png",
+      "/media/thumbs/image-key.png",
     );
 
     await user.click(preview);
 
-    expect(screen.getByRole("dialog", { name: "Image attached to message #1" })).toBeInTheDocument();
+    const dialog = screen.getByRole("dialog", { name: "Image attached to message #1" });
+    expect(dialog).toBeInTheDocument();
+    expect(within(dialog).getByRole("img", { name: "Attachment for message #1" })).toHaveAttribute(
+      "src",
+      "/media/image-key.png",
+    );
 
     await user.click(screen.getByRole("button", { name: "Close image preview" }));
 
     expect(screen.queryByRole("dialog", { name: "Image attached to message #1" })).not.toBeInTheDocument();
+  });
+
+  it("falls back to the full image when a thumbnail preview fails to load", async () => {
+    fetchMock.mockResolvedValueOnce(createResponse(channelsResponse));
+    fetchMock.mockResolvedValueOnce(
+      createResponse([
+        {
+          id: 1,
+          author_id: 1,
+          channel_id: 1,
+          body: "Image message",
+          image: "/media/image-key.png",
+          image_thumbnail: "/media/thumbs/image-key.png",
+          created_at: "2026-03-17T18:00:00Z",
+          edited_at: null,
+        },
+      ]),
+    );
+
+    render(<App />);
+
+    expect(await screen.findByText("Image message")).toBeInTheDocument();
+
+    const image = screen.getByRole("img", { name: "Attachment for message #1" });
+    expect(image).toHaveAttribute("src", "/media/thumbs/image-key.png");
+
+    fireEvent.error(image);
+
+    expect(image).toHaveAttribute("src", "/media/image-key.png");
   });
 
   it("shows load failures from the API", async () => {

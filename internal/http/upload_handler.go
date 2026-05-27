@@ -75,7 +75,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	normalizedImage, err := images.NormalizeImageToPNG(file, contentType)
+	normalizedImageBytes, img, err := images.NormalizeImageToPNG(file, contentType)
 	if err != nil {
 		log.Printf("failed to normalize uploaded file %q: %v", handler.Filename, err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to normalize file")
@@ -83,11 +83,26 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	}
 
 	id := uuid.New().String() + ".png"
-	url, err := h.store.Save(id, "image/png", normalizedImage)
+
+	url, err := h.store.Save(id, "image/png", normalizedImageBytes)
 	if err != nil {
 		log.Printf("failed to save uploaded file %q as %q: %v", handler.Filename, id, err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to save file")
 		return
+	}
+
+	// Best effort attempt to make a thumbnail, if it fails we don't want to fail the whole upload
+	// The UI should handle missing thumbnails gracefully
+	thumbnailBytes, err := images.ResizeImage(img, 200)
+	if err != nil {
+		log.Printf("failed to create thumbnail for uploaded file %q: %v", handler.Filename, err)
+	}
+	if thumbnailBytes != nil {
+		thumbnailID := media.ThumbnailKey(id)
+		// We don't need the URL here so we can ignore it
+		if _, err := h.store.Save(thumbnailID, "image/png", thumbnailBytes); err != nil {
+			log.Printf("failed to save thumbnail for uploaded file %q: %v", handler.Filename, err)
+		}
 	}
 
 	response := struct {

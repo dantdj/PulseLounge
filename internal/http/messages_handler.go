@@ -21,13 +21,14 @@ type MessagesHandler struct {
 }
 
 type messageResponse struct {
-	ID        int64      `json:"id"`
-	AuthorID  int64      `json:"author_id"`
-	ChannelID int64      `json:"channel_id"`
-	Body      string     `json:"body"`
-	Image     string     `json:"image,omitempty"`
-	CreatedAt time.Time  `json:"created_at"`
-	EditedAt  *time.Time `json:"edited_at"`
+	ID             int64      `json:"id"`
+	AuthorID       int64      `json:"author_id"`
+	ChannelID      int64      `json:"channel_id"`
+	Body           string     `json:"body"`
+	Image          string     `json:"image,omitempty"`
+	ImageThumbnail string     `json:"image_thumbnail,omitempty"`
+	CreatedAt      time.Time  `json:"created_at"`
+	EditedAt       *time.Time `json:"edited_at"`
 }
 
 func NewMessagesHandler(service messages.Service, store media.Store) MessagesHandler {
@@ -179,6 +180,7 @@ func (h MessagesHandler) messageResponse(message messages.Message) messageRespon
 
 	if message.ImageKey != nil && *message.ImageKey != "" {
 		response.Image = h.store.PublicURL(*message.ImageKey)
+		response.ImageThumbnail = h.store.PublicURL(media.ThumbnailKey(*message.ImageKey))
 	}
 
 	return response

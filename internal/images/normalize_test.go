@@ -29,7 +29,7 @@ func TestNormalizeImageToPNGReturnsPNG(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NormalizeImageToPNG(bytes.NewReader(tt.input), tt.contentType)
+			got, _, err := NormalizeImageToPNG(bytes.NewReader(tt.input), tt.contentType)
 			if err != nil {
 				t.Fatalf("NormalizeImageToPNG returned error: %v", err)
 			}
@@ -53,7 +53,7 @@ func TestNormalizeImageToPNGStripsJPEGExif(t *testing.T) {
 		t.Fatal("expected jpeg fixture to contain test EXIF marker")
 	}
 
-	got, err := NormalizeImageToPNG(bytes.NewReader(jpegWithExif), "image/jpeg")
+	got, _, err := NormalizeImageToPNG(bytes.NewReader(jpegWithExif), "image/jpeg")
 	if err != nil {
 		t.Fatalf("NormalizeImageToPNG returned error: %v", err)
 	}
@@ -70,7 +70,7 @@ func TestNormalizeImageToPNGStripsJPEGExif(t *testing.T) {
 }
 
 func TestNormalizeImageToPNGRejectsUnsupportedContentType(t *testing.T) {
-	_, err := NormalizeImageToPNG(bytes.NewReader(createTestPNG(t)), "image/gif")
+	_, _, err := NormalizeImageToPNG(bytes.NewReader(createTestPNG(t)), "image/gif")
 	if err == nil {
 		t.Fatal("expected error for unsupported content type")
 	}
@@ -104,7 +104,7 @@ func TestNormalizeImageToPNGReturnsDecodeErrors(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, err := NormalizeImageToPNG(bytes.NewReader(tt.input), tt.contentType)
+			_, _, err := NormalizeImageToPNG(bytes.NewReader(tt.input), tt.contentType)
 			if err == nil {
 				t.Fatal("expected decode error")
 			}

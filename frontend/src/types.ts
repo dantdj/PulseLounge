@@ -4,6 +4,7 @@ export type Message = {
   channel_id: number;
   body: string;
   image?: string;
+  image_thumbnail?: string;
   created_at: string;
   edited_at: string | null;
 };
