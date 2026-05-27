@@ -3,6 +3,8 @@ package messages
 import (
 	"context"
 	"database/sql"
+
+	"pulselounge/internal/postgres"
 )
 
 type PostgresRepository struct {
@@ -14,29 +16,38 @@ func NewPostgresRepository(db *sql.DB) PostgresRepository {
 }
 
 func (r PostgresRepository) ListByChannel(ctx context.Context, channelID int64) (_ []Message, err error) {
-	rows, err := r.db.QueryContext(ctx, `
+	var messages []Message
+	err = postgres.WithRetry(ctx, func(ctx context.Context) error {
+		rows, err := r.db.QueryContext(ctx, `
 SELECT id, author_id, channel_id, body, image_key, created_at, edited_at
 FROM messages
 WHERE channel_id = $1
 ORDER BY created_at, id`, channelID)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		if closeErr := rows.Close(); closeErr != nil && err == nil {
-			err = closeErr
+		if err != nil {
+			return err
 		}
-	}()
+		defer func() {
+			if closeErr := rows.Close(); closeErr != nil && err == nil {
+				err = closeErr
+			}
+		}()
 
-	messages := make([]Message, 0)
-	for rows.Next() {
-		var m Message
-		if err := rows.Scan(&m.ID, &m.AuthorID, &m.ChannelID, &m.Body, &m.ImageKey, &m.CreatedAt, &m.EditedAt); err != nil {
-			return nil, err
+		result := make([]Message, 0)
+		for rows.Next() {
+			var m Message
+			if err := rows.Scan(&m.ID, &m.AuthorID, &m.ChannelID, &m.Body, &m.ImageKey, &m.CreatedAt, &m.EditedAt); err != nil {
+				return err
+			}
+			result = append(result, m)
 		}
-		messages = append(messages, m)
-	}
-	if err := rows.Err(); err != nil {
+		if err := rows.Err(); err != nil {
+			return err
+		}
+
+		messages = result
+		return nil
+	})
+	if err != nil {
 		return nil, err
 	}
 
@@ -45,6 +56,8 @@ ORDER BY created_at, id`, channelID)
 
 func (r PostgresRepository) CreateInChannel(ctx context.Context, channelID int64, authorID int64, body string, imageKey string) (Message, error) {
 	var m Message
+	// TODO: We should eventually have this behind a retry, but we need idempotency tokens
+	// first to avoid duplicates on retry
 	err := r.db.QueryRowContext(ctx, `
 INSERT INTO messages (author_id, channel_id, body, image_key)
 VALUES ($1, $2, $3, $4)
