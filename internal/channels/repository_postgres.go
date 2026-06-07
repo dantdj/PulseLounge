@@ -3,6 +3,7 @@ package channels
 import (
 	"context"
 	"database/sql"
+	"log"
 
 	"pulselounge/internal/postgres"
 )
@@ -70,7 +71,10 @@ func (r PostgresRepository) Delete(ctx context.Context, id int64) (err error) {
 		}
 		defer func() {
 			if err != nil {
-				_ = tx.Rollback()
+				log.Printf("rolling back channel delete transaction due to error: %v", err)
+				if rollbackErr := tx.Rollback(); rollbackErr != nil {
+					log.Printf("failed to rollback channel delete transaction: %v", rollbackErr)
+				}
 			}
 		}()
 
