@@ -1,18 +1,26 @@
 package main
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 
 	uiassets "pulselounge"
 	"pulselounge/internal/channels"
 	httpapi "pulselounge/internal/http"
+	"pulselounge/internal/logging"
 	"pulselounge/internal/media"
 	"pulselounge/internal/messages"
 )
 
 func main() {
+	logger := logging.New(logging.Config{
+		Environment: appEnvironment(),
+		Format:      os.Getenv("LOG_FORMAT"),
+		Level:       os.Getenv("LOG_LEVEL"),
+	})
+	slog.SetDefault(logger)
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8080"
@@ -24,25 +32,29 @@ func main() {
 
 	db, err := initDB(databaseURL)
 	if err != nil {
-		log.Fatalf("failed to initialize database: %v", err)
+		logger.Error("failed to initialize database", "error", err)
+		os.Exit(1)
 	}
 	defer func() {
 		if closeErr := db.Close(); closeErr != nil {
-			log.Printf("failed to close database: %v", closeErr)
+			logger.Error("failed to close database", "error", closeErr)
 		}
 	}()
 
 	connectionString := os.Getenv("AZURE_STORAGE_CONNECTION_STRING")
 	if connectionString == "" {
-		log.Fatal("AZURE_STORAGE_CONNECTION_STRING environment variable is required")
+		logger.Error("AZURE_STORAGE_CONNECTION_STRING environment variable is required")
+		os.Exit(1)
 	}
 	publicBaseURL := os.Getenv("MEDIA_PUBLIC_BASE_URL")
 	if publicBaseURL == "" {
-		log.Fatal("MEDIA_PUBLIC_BASE_URL environment variable is required")
+		logger.Error("MEDIA_PUBLIC_BASE_URL environment variable is required")
+		os.Exit(1)
 	}
 	containerName := os.Getenv("MEDIA_CONTAINER_NAME")
 	if containerName == "" {
-		log.Fatal("MEDIA_CONTAINER_NAME environment variable is required")
+		logger.Error("MEDIA_CONTAINER_NAME environment variable is required")
+		os.Exit(1)
 	}
 
 	var uiHandler http.Handler
@@ -50,13 +62,15 @@ func main() {
 	if uiDevServer != "" {
 		uiHandler, err = spaProxyHandler(uiDevServer)
 		if err != nil {
-			log.Fatalf("failed to configure UI dev proxy: %v", err)
+			logger.Error("failed to configure UI dev proxy", "error", err)
+			os.Exit(1)
 		}
-		log.Printf("proxying UI requests to %s", uiDevServer)
+		logger.Info("proxying UI requests", "target", uiDevServer)
 	} else {
 		uiFS, fsErr := uiassets.FS()
 		if fsErr != nil {
-			log.Fatalf("failed to load embedded UI: %v", fsErr)
+			logger.Error("failed to load embedded UI", "error", fsErr)
+			os.Exit(1)
 		}
 		uiHandler = spaHandler(uiFS)
 	}
@@ -67,13 +81,22 @@ func main() {
 	channelService := channels.NewService(channelRepo)
 	blobStore, err := media.NewAzureBlobStore(connectionString, containerName, publicBaseURL)
 	if err != nil {
-		log.Fatalf("failed to configure blob storage: %v", err)
+		logger.Error("failed to configure blob storage", "error", err)
+		os.Exit(1)
 	}
-	mux := httpapi.NewRouter(uiHandler, messageService, channelService, blobStore)
+	mux := httpapi.NewRouterWithLogger(uiHandler, messageService, channelService, blobStore, logger)
 
 	addr := ":" + port
-	log.Printf("server listening on %s", addr)
+	logger.Info("server listening", "addr", addr)
 	if err := http.ListenAndServe(addr, mux); err != nil {
-		log.Fatal(err)
+		logger.Error("server stopped", "error", err)
+		os.Exit(1)
 	}
+}
+
+func appEnvironment() string {
+	if env := os.Getenv("APP_ENV"); env != "" {
+		return env
+	}
+	return os.Getenv("GO_ENV")
 }

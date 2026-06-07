@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"image"
 	"image/png"
-	"log"
+	"log/slog"
 	"math"
 	"time"
 
@@ -14,7 +14,7 @@ import (
 func ResizeImage(img image.Image, width int) ([]byte, error) {
 	start := time.Now()
 	defer func() {
-		log.Printf("resizing image took %v", time.Since(start))
+		slog.Debug("resized image", "duration", time.Since(start), "width", width)
 	}()
 	ratio := (float64)(img.Bounds().Max.Y) / (float64)(img.Bounds().Max.X)
 	newHeight := int(math.Round(float64(width) * ratio))

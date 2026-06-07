@@ -1,6 +1,7 @@
 package httpapi
 
 import (
+	"log/slog"
 	"net/http"
 	"strings"
 
@@ -9,7 +10,11 @@ import (
 	"pulselounge/internal/messages"
 )
 
-func NewRouter(uiHandler http.Handler, messageService messages.Service, channelService channels.Service, blobStore media.Store) *http.ServeMux {
+func NewRouter(uiHandler http.Handler, messageService messages.Service, channelService channels.Service, blobStore media.Store) http.Handler {
+	return NewRouterWithLogger(uiHandler, messageService, channelService, blobStore, slog.Default())
+}
+
+func NewRouterWithLogger(uiHandler http.Handler, messageService messages.Service, channelService channels.Service, blobStore media.Store, logger *slog.Logger) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/api/health", healthHandler)
 
@@ -31,5 +36,5 @@ func NewRouter(uiHandler http.Handler, messageService messages.Service, channelS
 	mux.HandleFunc("/api/upload", uploadHandler.Upload)
 
 	mux.Handle("/", uiHandler)
-	return mux
+	return withRequestLogging(logger, withPanicRecovery(logger, mux))
 }

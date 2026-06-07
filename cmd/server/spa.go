@@ -2,7 +2,7 @@ package main
 
 import (
 	"io/fs"
-	"log"
+	"log/slog"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
@@ -39,7 +39,7 @@ func spaHandler(uiFS fs.FS) http.HandlerFunc {
 
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if _, err := w.Write(indexHTML); err != nil {
-			log.Printf("failed to write SPA fallback response: %v", err)
+			slog.ErrorContext(r.Context(), "failed to write SPA fallback response", "error", err)
 		}
 	}
 }

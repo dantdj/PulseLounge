@@ -3,7 +3,6 @@ package httpapi
 import (
 	"errors"
 	"io"
-	"log"
 	"net/http"
 	"pulselounge/internal/images"
 	"pulselounge/internal/media"
@@ -43,7 +42,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	err := r.ParseMultipartForm(maxUploadBytes)
 	if err != nil {
-		log.Printf("failed to parse upload form: %v", err)
+		LoggerFromContext(r.Context()).WarnContext(r.Context(), "failed to parse upload form", "error", err)
 		writeJSONError(w, http.StatusBadRequest, "failed to parse form data")
 		return
 	}
@@ -55,7 +54,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() {
 		if closeErr := file.Close(); closeErr != nil {
-			log.Printf("error closing uploaded file: %s", closeErr.Error())
+			LoggerFromContext(r.Context()).WarnContext(r.Context(), "failed to close uploaded file", "error", closeErr)
 		}
 	}()
 
@@ -77,7 +76,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	normalizedImageBytes, img, err := images.NormalizeImageToPNG(file, contentType)
 	if err != nil {
-		log.Printf("failed to normalize uploaded file %q: %v", handler.Filename, err)
+		LoggerFromContext(r.Context()).ErrorContext(r.Context(), "failed to normalize uploaded file", "filename", handler.Filename, "error", err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to normalize file")
 		return
 	}
@@ -86,7 +85,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 
 	url, err := h.store.Save(id, "image/png", normalizedImageBytes)
 	if err != nil {
-		log.Printf("failed to save uploaded file %q as %q: %v", handler.Filename, id, err)
+		LoggerFromContext(r.Context()).ErrorContext(r.Context(), "failed to save uploaded file", "filename", handler.Filename, "upload_key", id, "error", err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to save file")
 		return
 	}
@@ -95,13 +94,13 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	// The UI should handle missing thumbnails gracefully
 	thumbnailBytes, err := images.ResizeImage(img, 200)
 	if err != nil {
-		log.Printf("failed to create thumbnail for uploaded file %q: %v", handler.Filename, err)
+		LoggerFromContext(r.Context()).WarnContext(r.Context(), "failed to create upload thumbnail", "filename", handler.Filename, "upload_key", id, "error", err)
 	}
 	if thumbnailBytes != nil {
 		thumbnailID := media.ThumbnailKey(id)
 		// We don't need the URL here so we can ignore it
 		if _, err := h.store.Save(thumbnailID, "image/png", thumbnailBytes); err != nil {
-			log.Printf("failed to save thumbnail for uploaded file %q: %v", handler.Filename, err)
+			LoggerFromContext(r.Context()).WarnContext(r.Context(), "failed to save upload thumbnail", "filename", handler.Filename, "upload_key", thumbnailID, "error", err)
 		}
 	}
 
