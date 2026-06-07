@@ -43,7 +43,7 @@ func TestRequestLoggingPreservesRequestID(t *testing.T) {
 func TestPanicRecoveryLogsAndReturnsInternalServerError(t *testing.T) {
 	var logs bytes.Buffer
 	logger := slog.New(slog.NewTextHandler(&logs, nil))
-	handler := withRequestLogging(logger, withPanicRecovery(logger, http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
+	handler := withRequestLogging(logger, withPanicRecovery(http.HandlerFunc(func(http.ResponseWriter, *http.Request) {
 		panic("boom")
 	})))
 

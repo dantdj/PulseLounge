@@ -36,5 +36,5 @@ func NewRouterWithLogger(uiHandler http.Handler, messageService messages.Service
 	mux.HandleFunc("/api/upload", uploadHandler.Upload)
 
 	mux.Handle("/", uiHandler)
-	return withRequestLogging(logger, withPanicRecovery(logger, mux))
+	return withRequestLogging(logger, withPanicRecovery(mux))
 }

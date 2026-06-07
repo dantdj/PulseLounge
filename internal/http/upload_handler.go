@@ -93,6 +93,7 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 	// Best effort attempt to make a thumbnail, if it fails we don't want to fail the whole upload
 	// The UI should handle missing thumbnails gracefully
 	thumbnailBytes, err := images.ResizeImage(img, 200)
+	thumbnailCreated := false
 	if err != nil {
 		LoggerFromContext(r.Context()).WarnContext(r.Context(), "failed to create upload thumbnail", "filename", handler.Filename, "upload_key", id, "error", err)
 	}
@@ -101,8 +102,18 @@ func (h UploadHandler) Upload(w http.ResponseWriter, r *http.Request) {
 		// We don't need the URL here so we can ignore it
 		if _, err := h.store.Save(thumbnailID, "image/png", thumbnailBytes); err != nil {
 			LoggerFromContext(r.Context()).WarnContext(r.Context(), "failed to save upload thumbnail", "filename", handler.Filename, "upload_key", thumbnailID, "error", err)
+		} else {
+			thumbnailCreated = true
 		}
 	}
+
+	LoggerFromContext(r.Context()).InfoContext(
+		r.Context(),
+		"uploaded file",
+		"uploaded_content_type", contentType,
+		"size_bytes", handler.Size,
+		"thumbnail_created", thumbnailCreated,
+	)
 
 	response := struct {
 		Url string `json:"url"`

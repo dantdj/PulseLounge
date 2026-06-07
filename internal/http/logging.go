@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"time"
 
+	applogging "pulselounge/internal/logging"
+
 	"github.com/google/uuid"
 )
 
@@ -13,17 +15,10 @@ const requestIDHeader = "X-Request-ID"
 
 type contextKey string
 
-const (
-	loggerContextKey    contextKey = "logger"
-	requestIDContextKey contextKey = "request_id"
-)
+const requestIDContextKey contextKey = "request_id"
 
 func LoggerFromContext(ctx context.Context) *slog.Logger {
-	logger, ok := ctx.Value(loggerContextKey).(*slog.Logger)
-	if !ok || logger == nil {
-		return slog.Default()
-	}
-	return logger
+	return applogging.FromContext(ctx)
 }
 
 func RequestIDFromContext(ctx context.Context) string {
@@ -43,7 +38,7 @@ func withRequestLogging(logger *slog.Logger, next http.Handler) http.Handler {
 		}
 
 		requestLogger := logger.With("request_id", requestID)
-		ctx := context.WithValue(r.Context(), loggerContextKey, requestLogger)
+		ctx := applogging.ContextWithLogger(r.Context(), requestLogger)
 		ctx = context.WithValue(ctx, requestIDContextKey, requestID)
 		r = r.WithContext(ctx)
 
@@ -75,11 +70,7 @@ func withRequestLogging(logger *slog.Logger, next http.Handler) http.Handler {
 	})
 }
 
-func withPanicRecovery(logger *slog.Logger, next http.Handler) http.Handler {
-	if logger == nil {
-		logger = slog.Default()
-	}
-
+func withPanicRecovery(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		defer func() {
 			if recovered := recover(); recovered != nil {
