@@ -4,6 +4,8 @@
 
 Configuration lives in the `.env` file (create your own from `.env.example`).
 
+Logging uses plain text outside production and JSON in production. Set `APP_ENV=production` or `GO_ENV=production` to enable JSON logs, or override explicitly with `LOG_FORMAT=json` or `LOG_FORMAT=text`. Set `LOG_LEVEL=debug`, `info`, `warn`, or `error` to control verbosity.
+
 ## Local VSCode TypeScript Setup
 
 You can open the full repo root in VSCode. The React TypeScript project resolves from `frontend/`, and the repo settings point VSCode at the frontend workspace TypeScript SDK.

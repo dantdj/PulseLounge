@@ -3,7 +3,6 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -75,7 +74,7 @@ func (h MessagesHandler) List(w http.ResponseWriter, r *http.Request, channelID 
 
 	result, err := h.service.ListByChannel(r.Context(), channelID)
 	if err != nil {
-		log.Printf("failed to query messages for channel %d: %v", channelID, err)
+		LoggerFromContext(r.Context()).ErrorContext(r.Context(), "failed to query messages", "channel_id", channelID, "error", err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to query messages")
 		return
 	}
@@ -104,7 +103,7 @@ func (h MessagesHandler) Create(w http.ResponseWriter, r *http.Request, channelI
 			writeJSONError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		log.Printf("failed to create message in channel %d: %v", channelID, err)
+		LoggerFromContext(r.Context()).ErrorContext(r.Context(), "failed to create message", "channel_id", channelID, "error", err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to create message")
 		return
 	}
@@ -134,7 +133,7 @@ func (h MessagesHandler) Edit(w http.ResponseWriter, r *http.Request, messageID 
 		case errors.Is(err, messages.ErrMessageNotFound):
 			writeJSONError(w, http.StatusNotFound, err.Error())
 		default:
-			log.Printf("failed to edit message %d: %v", messageID, err)
+			LoggerFromContext(r.Context()).ErrorContext(r.Context(), "failed to edit message", "message_id", messageID, "error", err)
 			writeJSONError(w, http.StatusInternalServerError, "failed to edit message")
 		}
 		return

@@ -3,7 +3,6 @@ package httpapi
 import (
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -53,7 +52,7 @@ func (h ChannelsHandler) Channel(w http.ResponseWriter, r *http.Request) {
 func (h ChannelsHandler) List(w http.ResponseWriter, r *http.Request) {
 	result, err := h.service.List(r.Context())
 	if err != nil {
-		log.Printf("failed to query channels: %v", err)
+		LoggerFromContext(r.Context()).ErrorContext(r.Context(), "failed to query channels", "error", err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to query channels")
 		return
 	}
@@ -76,7 +75,7 @@ func (h ChannelsHandler) Create(w http.ResponseWriter, r *http.Request) {
 			writeJSONError(w, http.StatusBadRequest, err.Error())
 			return
 		}
-		log.Printf("failed to create channel: %v", err)
+		LoggerFromContext(r.Context()).ErrorContext(r.Context(), "failed to create channel", "error", err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to create channel")
 		return
 	}
@@ -91,7 +90,7 @@ func (h ChannelsHandler) Delete(w http.ResponseWriter, r *http.Request, channelI
 			writeJSONError(w, http.StatusNotFound, err.Error())
 			return
 		}
-		log.Printf("failed to delete channel %d: %v", channelID, err)
+		LoggerFromContext(r.Context()).ErrorContext(r.Context(), "failed to delete channel", "channel_id", channelID, "error", err)
 		writeJSONError(w, http.StatusInternalServerError, "failed to delete channel")
 		return
 	}
